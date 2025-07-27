@@ -213,18 +213,21 @@ export default function EditDestination() {
 
             // 👉 Section: gallery
             if (gallery.length > 0) {
+                console.log("gallery >>> ", gallery);
                 const galleryNames: string[] = [];
                 gallery.forEach((file) => {
-                    if (file.originFileObj) {
-                        const origin = file.originFileObj as RcFile;
-                        formData.append("galleryImages[]", origin);
-                        galleryNames.push(origin.name);
-                    } else {
-                        // Nếu là ảnh cũ từ server thì có thể push luôn tên
-                        if (file.name) {
-                            galleryNames.push(file.name);
-                        }
+                    if (!file.originFileObj && file?.url) {
+                        galleryNames.push(file.url);
+                        // const origin = file.originFileObj as RcFile;
+                        // formData.append("galleryImages[]", origin);
+                        // galleryNames.push(origin.name);
                     }
+                    // else {
+                    //     // Nếu là ảnh cũ từ server thì có thể push luôn tên
+                    //     if (file?.url) {
+                    //         galleryNames.push(file.url);
+                    //     }
+                    // }
                 });
                 sections.push({
                     type: "gallery",
