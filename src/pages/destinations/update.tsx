@@ -221,8 +221,9 @@ export default function EditDestination() {
                         formData.append("galleryImages[]", origin);
                     } else {
                         // Nếu là ảnh cũ từ server thì có thể push luôn tên
-                        if (file?.name) {
-                            galleryNames.push(file.name);
+                        if (file?.url) {
+                            const filename = file.url.split("/").pop(); // tách đúng tên từ url
+                            galleryNames.push(filename || "");
                         }
                     }
                 });
