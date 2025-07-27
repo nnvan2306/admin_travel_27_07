@@ -221,8 +221,8 @@ export default function EditDestination() {
                         formData.append("galleryImages[]", origin);
                     } else {
                         // Nếu là ảnh cũ từ server thì có thể push luôn tên
-                        if (file?.url) {
-                            galleryNames.push(file.url);
+                        if (file?.name) {
+                            galleryNames.push(file.name);
                         }
                     }
                 });
@@ -284,7 +284,7 @@ export default function EditDestination() {
                     }
                     return {
                         name: dish.name,
-                        image: dish.image,
+                        image: dish.name,
                     };
                 })
                 .filter((d) => d.name); // lọc món ăn hợp lệ
