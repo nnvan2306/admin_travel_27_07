@@ -216,18 +216,15 @@ export default function EditDestination() {
                 console.log("gallery >>> ", gallery);
                 const galleryNames: string[] = [];
                 gallery.forEach((file) => {
-                    if (!file.originFileObj && file?.url) {
-                        galleryNames.push(file.url);
-                        // const origin = file.originFileObj as RcFile;
-                        // formData.append("galleryImages[]", origin);
-                        // galleryNames.push(origin.name);
+                    if (file.originFileObj) {
+                        const origin = file.originFileObj as RcFile;
+                        formData.append("galleryImages[]", origin);
+                    } else {
+                        // Nếu là ảnh cũ từ server thì có thể push luôn tên
+                        if (file?.url) {
+                            galleryNames.push(file.url);
+                        }
                     }
-                    // else {
-                    //     // Nếu là ảnh cũ từ server thì có thể push luôn tên
-                    //     if (file?.url) {
-                    //         galleryNames.push(file.url);
-                    //     }
-                    // }
                 });
                 sections.push({
                     type: "gallery",
