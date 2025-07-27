@@ -1,0 +1,13 @@
+html,
+body {
+  background-color: #ececec;
+}
+.main-content {
+  padding: 20px;
+}
+a {
+  text-decoration: none;
+}
+span {
+  display: inline-block;
+}

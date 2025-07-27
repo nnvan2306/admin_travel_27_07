@@ -1,0 +1,8 @@
+.loginForm {
+  background: url("/public/images/bg-login.png");
+  background-repeat: no-repeat;
+  background-size: cover;
+  background-position: center;
+  @apply w-screen h-screen flex justify-center
+    items-center;
+}
