@@ -20,7 +20,6 @@ import ReactMarkdown from "react-markdown";
 import MdEditor from "react-markdown-editor-lite";
 import "react-markdown-editor-lite/lib/index.css";
 
-const { TextArea } = Input;
 const { Panel } = Collapse;
 
 interface CategoryType {
@@ -40,6 +39,7 @@ export default function EditDestination() {
     const [categories, setCategories] = useState<CategoryType[]>([]);
 
     const [intro, setIntro] = useState("");
+    const [introTitle, setIntroTitle] = useState("");
     const [highlight, setHighlight] = useState([
         { title: "", description: "" },
     ]);
@@ -53,7 +53,6 @@ export default function EditDestination() {
     >([[]]);
     const [experience, setExperience] = useState<any>(null);
     const [lastImageFile, setLastImageFile] = useState<UploadFile<any>[]>([]);
-    const [introTitle, setIntroTitle] = useState("");
 
     useEffect(() => {
         const fetchData = async () => {
@@ -113,7 +112,10 @@ export default function EditDestination() {
                         },
                     ]);
                 }
-                if (introSec) setIntro(introSec.content);
+                if (introSec) {
+                    setIntro(introSec.content);
+                    setIntroTitle(introSec?.title || "");
+                }
                 if (highlightSec) setHighlight(highlightSec.content || []);
                 if (gallerySec) {
                     const files = (gallerySec.content || []).map(
@@ -132,7 +134,10 @@ export default function EditDestination() {
                     setDelicaciesDishes(
                         dishes.map((d: any) => ({
                             name: d.name,
-                            image: d.image,
+                            image:
+                                d.image && !d.image.startsWith("http")
+                                    ? `/storage/${d.image}`
+                                    : d.image,
                         }))
                     );
                     setDelicaciesImageFiles(dishes.map(() => [])); // File ảnh sẽ được upload lại nếu người dùng muốn
@@ -158,7 +163,7 @@ export default function EditDestination() {
 
             formData.append("name", values.name);
             formData.append("description", values.description);
-            formData.append("area", values.area);
+            // formData.append("area", values.area);
             formData.append("category_id", values.category_id);
 
             for (const [key, value] of formData.entries()) {
@@ -169,7 +174,7 @@ export default function EditDestination() {
                 );
             }
 
-            if (bannerFile.length > 0) {
+            if (bannerFile.length > 0 && bannerFile[0].originFileObj) {
                 formData.append(
                     "imgBanner",
                     bannerFile[0].originFileObj as RcFile
@@ -207,36 +212,36 @@ export default function EditDestination() {
             }
 
             // 👉 Section: gallery
-            // if (gallery.length > 0) {
-            //   const galleryNames: string[] = [];
-            //   gallery.forEach((file) => {
+            if (gallery.length > 0) {
+                const galleryNames: string[] = [];
+                gallery.forEach((file) => {
+                    if (file.originFileObj) {
+                        const origin = file.originFileObj as RcFile;
+                        formData.append("galleryImages[]", origin);
+                        galleryNames.push(origin.name);
+                    } else {
+                        // Nếu là ảnh cũ từ server thì có thể push luôn tên
+                        if (file.name) {
+                            galleryNames.push(file.name);
+                        }
+                    }
+                });
+                sections.push({
+                    type: "gallery",
+                    content: galleryNames,
+                });
+            }
+            // const galleryNames: string[] = [];
+            // gallery.forEach((file) => {
             //     if (file.originFileObj) {
-            //       const origin = file.originFileObj as RcFile;
-            //       formData.append('galleryImages[]', origin);
-            //       galleryNames.push(origin.name);
-            //     } else {
-            //       // Nếu là ảnh cũ từ server thì có thể push luôn tên
-            //       if (file.name) {
-            //         galleryNames.push(file.name);
-            //       }
+            //         const origin = file.originFileObj as RcFile;
+            //         formData.append("galleryImages[]", origin);
+            //         galleryNames.push(origin.name);
+            //     } else if (file.url) {
+            //         const filename = file.url.split("/").pop(); // tách đúng tên từ url
+            //         galleryNames.push(filename || "");
             //     }
-            //   });
-            //   sections.push({
-            //     type: 'gallery',
-            //     content: galleryNames,
-            //   });
-            // }
-            const galleryNames: string[] = [];
-            gallery.forEach((file) => {
-                if (file.originFileObj) {
-                    const origin = file.originFileObj as RcFile;
-                    formData.append("galleryImages[]", origin);
-                    galleryNames.push(origin.name);
-                } else if (file.url) {
-                    const filename = file.url.split("/").pop(); // tách đúng tên từ url
-                    galleryNames.push(filename || "");
-                }
-            });
+            // });
 
             // 👉 Section: lastImage
             // if (lastImageFile.length > 0) {
@@ -266,30 +271,6 @@ export default function EditDestination() {
             }
 
             // 👉 Section: regionalDelicacies
-            // const dishesWithImages = delicaciesDishes.map((dish, idx) => {
-            //   const imgFile = delicaciesImageFiles[idx]?.[0]?.originFileObj as RcFile;
-            //   if (imgFile) {
-            //     formData.append('delicacyImages[]', imgFile);
-            //     return {
-            //       name: dish.name,
-            //       image: imgFile.name,
-            //     };
-            //   }
-            //   return {
-            //     name: dish.name,
-            //     image: '',
-            //   };
-            // }).filter(d => d.name); // lọc món ăn hợp lệ
-
-            // if (delicaciesIntro.trim() || dishesWithImages.length > 0) {
-            //   sections.push({
-            //     type: 'regionalDelicacies',
-            //     content: {
-            //       intro: delicaciesIntro.trim(),
-            //       dishes: dishesWithImages,
-            //     },
-            //   });
-            // }
             const dishesWithImages = delicaciesDishes
                 .map((dish, idx) => {
                     const imgFile = delicaciesImageFiles[idx]?.[0]
@@ -300,25 +281,53 @@ export default function EditDestination() {
                             name: dish.name,
                             image: imgFile.name,
                         };
-                    } else {
-                        // nếu không chọn ảnh mới thì giữ nguyên image cũ
-                        return {
-                            name: dish.name,
-                            image: dish.image || "",
-                        };
                     }
+                    return {
+                        name: dish.name,
+                        image: dish.image,
+                    };
                 })
-                .filter((d) => d.name);
+                .filter((d) => d.name); // lọc món ăn hợp lệ
+
+            if (delicaciesIntro.trim() || dishesWithImages.length > 0) {
+                sections.push({
+                    type: "regionalDelicacies",
+                    content: {
+                        intro: delicaciesIntro.trim(),
+                        dishes: dishesWithImages,
+                    },
+                });
+            }
+            // const dishesWithImages = delicaciesDishes
+            //     .map((dish, idx) => {
+            //         const imgFile = delicaciesImageFiles[idx]?.[0]
+            //             ?.originFileObj as RcFile;
+            //         if (imgFile) {
+            //             formData.append("delicacyImages[]", imgFile);
+            //             return {
+            //                 name: dish.name,
+            //                 image: imgFile.name,
+            //             };
+            //         } else {
+            //             // nếu không chọn ảnh mới thì giữ nguyên image cũ
+            //             return {
+            //                 name: dish.name,
+            //                 image: dish.image || "",
+            //             };
+            //         }
+            //     })
+            //     .filter((d) => d.name);
 
             // ✨ Add final sections JSON
             formData.append("sections", JSON.stringify(sections));
 
-            const res = await API.put(`/destinations/${id}`, formData, {
-                headers: {
-                    "Content-Type": "multipart/form-data",
-                },
-            });
-
+            const res = await API.post(
+                `/destinations/${id}?_method=PUT`,
+                formData,
+                {
+                    headers: { "Content-Type": "multipart/form-data" },
+                }
+            );
             notifySuccess(res.data.message || "Cập nhật điểm đến thành công!");
             form.resetFields();
             setBannerFile([]);
@@ -330,6 +339,7 @@ export default function EditDestination() {
             setDelicaciesDishes([{ name: "", image: "" }]);
             setDelicaciesImageFiles([[]]);
             setLastImageFile([]);
+            navigate("/destinations");
         } catch (error: any) {
             notifyError(
                 error?.response?.data?.message || "Cập nhật điểm đến thất bại!"
@@ -642,6 +652,20 @@ export default function EditDestination() {
                                                 )
                                             }
                                         />
+                                        {/* Hiển thị ảnh món ăn nếu có */}
+                                        {dish.image && (
+                                            <img
+                                                src={dish.image}
+                                                alt={dish.name}
+                                                style={{
+                                                    maxWidth: 120,
+                                                    maxHeight: 120,
+                                                    marginBottom: 8,
+                                                    borderRadius: 8,
+                                                    border: "1px solid #eee",
+                                                }}
+                                            />
+                                        )}
                                         <Upload
                                             listType="picture"
                                             fileList={delicaciesImageFiles[idx]}
@@ -683,11 +707,17 @@ export default function EditDestination() {
                             </Button>
                         </Panel>
                         <Panel header="Trải nghiệm" key="experience">
-                            <TextArea
-                                rows={3}
+                            <MdEditor
                                 placeholder="Mô tả trải nghiệm"
+                                style={{
+                                    height: "300px",
+                                    marginBottom: "12px",
+                                }}
                                 value={experience}
-                                onChange={(e) => setExperience(e.target.value)}
+                                onChange={(e) => setExperience(e.text)}
+                                renderHTML={(text) => (
+                                    <ReactMarkdown>{text}</ReactMarkdown>
+                                )}
                             />
                         </Panel>
 
