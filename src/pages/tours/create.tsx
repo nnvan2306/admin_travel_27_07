@@ -511,10 +511,13 @@ export default function CreateTour() {
                                                 }),
                                             ]}
                                         >
-                                            <Input
+                                            <InputNumber
                                                 type="number"
                                                 min={1}
                                                 placeholder="Nhập ngày"
+                                                style={{
+                                                    width: "100%",
+                                                }}
                                             />
                                         </Form.Item>
                                         <Form.Item
