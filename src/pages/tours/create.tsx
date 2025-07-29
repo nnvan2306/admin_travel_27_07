@@ -10,17 +10,16 @@ import {
     message,
     Space,
     InputNumber,
+    Spin,
 } from "antd";
 import { PlusOutlined } from "@ant-design/icons";
 import type { UploadFile, RcFile } from "antd/es/upload/interface";
 import { API } from "@/lib/axios";
 import { useNotifier } from "@/hooks/useNotifier";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { Modal } from "antd";
 import ReactMarkdown from "react-markdown";
 import MdEditor from "react-markdown-editor-lite";
-
-const { TextArea } = Input;
 
 interface TourCategoryType {
     category_id: number;
@@ -55,7 +54,25 @@ type TourSchedule = {
     destination_id?: number;
 };
 
+interface TourType {
+    tour_id: number;
+    tour_name: string;
+    category_id: number;
+    description: string;
+    itinerary: string;
+    price: number;
+    discount_price: number | null;
+    destination: string;
+    destination_ids: number[];
+    duration: string;
+    status: string;
+    image: string | null; // filename
+    images: string[]; // album images filenames
+}
+
 export default function CreateTour() {
+    const { id } = useParams<{ id: string }>();
+    const [loadingData, setLoadingData] = useState(true);
     const [form] = Form.useForm();
     const [loading, setLoading] = useState(false);
     const [categories, setCategories] = useState<TourCategoryType[]>([]);
@@ -68,6 +85,66 @@ export default function CreateTour() {
     const [busRoutes, setBusRoutes] = useState<BusRouteType[]>([]);
 
     const navigate = useNavigate();
+
+    const fetchTour = async () => {
+        if (!id) return;
+        try {
+            const res = await API.get(`/tours/${id}`);
+            const tour: TourType = res.data;
+
+            // Gán dữ liệu vào form
+            form.setFieldsValue({
+                category_id: tour.category_id,
+                tour_name: tour.tour_name,
+                description: tour.description,
+                itinerary: tour.itinerary,
+                price: tour.price,
+                discount_price: tour.discount_price,
+                destination: tour.destination,
+                destination_ids: tour.destination_ids,
+                duration: tour.duration,
+                status: tour.status,
+            });
+
+            // Ảnh đại diện nếu có => đưa vào fileList để hiển thị preview
+            if (tour.image) {
+                setImageFileList([
+                    {
+                        uid: "-1",
+                        name: tour.image,
+                        status: "done",
+                        url: `${import.meta.env.VITE_BACKEND_URL}storage/${
+                            tour.image
+                        }`,
+                    },
+                ]);
+            }
+
+            if ((tour as any).album?.images?.length > 0) {
+                const albumFiles = (tour as any).album.images.map(
+                    (img: any, index: number) => ({
+                        uid: `album-${index}`,
+                        name: img.image_url,
+                        status: "done",
+                        url: `${import.meta.env.VITE_BACKEND_URL}storage/${
+                            img.image_url
+                        }`,
+                    })
+                );
+                setAlbumFileList(albumFiles);
+            }
+        } catch {
+            notifyError("Không tải được dữ liệu tour");
+        } finally {
+            setLoadingData(false);
+        }
+    };
+
+    useEffect(() => {
+        if (id) {
+            fetchTour();
+        }
+    }, [id]);
 
     // Fetch danh mục tour
     const fetchCategories = async () => {
@@ -154,8 +231,7 @@ export default function CreateTour() {
         });
     };
 
-    const onFinish = async (values: any) => {
-        console.log("values >>> ", values);
+    const handleCreateTour = async (values: any) => {
         try {
             setLoading(true);
 
@@ -258,6 +334,86 @@ export default function CreateTour() {
             setLoading(false);
         }
     };
+
+    const handleUpdateTour = async (values: any) => {
+        try {
+            setLoading(true);
+
+            const formData = new FormData();
+            formData.append("category_id", values.category_id);
+            formData.append("tour_name", values.tour_name);
+            formData.append("description", values.description || "");
+            formData.append("itinerary", values.itinerary || "");
+            formData.append("price", values.price.toString());
+            formData.append(
+                "discount_price",
+                values.discount_price?.toString() || ""
+            );
+            formData.append("destination", values.destination || "");
+            formData.append("duration", values.duration || "");
+            formData.append("status", values.status || "visible");
+
+            // Ảnh đại diện mới hoặc giữ ảnh cũ
+            if (imageFileList.length > 0) {
+                if (imageFileList[0].originFileObj) {
+                    // ảnh mới upload
+                    formData.append("image", imageFileList[0].originFileObj);
+                } else {
+                    // giữ ảnh cũ (file không có originFileObj, có url)
+                    formData.append("old_image", imageFileList[0].name);
+                }
+            }
+
+            // Album ảnh
+            albumFileList.forEach((file) => {
+                if (file.originFileObj) {
+                    formData.append("images[]", file.originFileObj);
+                } else {
+                    // nếu file cũ thì gửi tên ảnh để backend biết giữ lại
+                    formData.append("old_images[]", file.name);
+                }
+            });
+
+            // Điểm đến (nhiều)
+            if (
+                values.destination_ids &&
+                Array.isArray(values.destination_ids)
+            ) {
+                values.destination_ids.forEach((id: number) => {
+                    formData.append("destination_ids[]", id.toString());
+                });
+            }
+
+            await API.post(`/tours/${id}?_method=PUT`, formData, {
+                headers: { "Content-Type": "multipart/form-data" },
+            });
+
+            notifySuccess("Cập nhật tour thành công");
+            navigate("/tours");
+        } catch (error: any) {
+            notifyError(
+                error?.response?.data?.message || "Cập nhật tour thất bại"
+            );
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const onFinish = async (values: any) => {
+        if (id) {
+            handleUpdateTour(values);
+        } else {
+            handleCreateTour(values);
+        }
+    };
+
+    if (id && loadingData) {
+        return (
+            <div className="flex justify-center items-center h-60">
+                <Spin size="large" />
+            </div>
+        );
+    }
 
     return (
         <>
@@ -766,7 +922,7 @@ export default function CreateTour() {
                                     destinations.length === 0
                                 }
                             >
-                                Tạo tour
+                                {id ? "Cập nhật tour" : "Tạo tour"}
                             </Button>
                             <Button onClick={onCancel}>Hủy</Button>
                         </Space>

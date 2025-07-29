@@ -6,6 +6,7 @@ import {
     Button,
     Form,
     Input,
+    InputNumber,
     message,
     Select,
     Space,
@@ -15,8 +16,8 @@ import {
 import type { RcFile, UploadFile } from "antd/es/upload/interface";
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-
-const { TextArea } = Input;
+import ReactMarkdown from "react-markdown";
+import MdEditor from "react-markdown-editor-lite";
 
 interface TourCategoryType {
     category_id: number;
@@ -281,11 +282,29 @@ export default function UpdateTour() {
                     </Form.Item>
 
                     <Form.Item label="Mô tả" name="description">
-                        <TextArea rows={3} placeholder="Mô tả tour" />
+                        <MdEditor
+                            style={{ height: "300px" }}
+                            value={form.getFieldValue("description") || ""}
+                            renderHTML={(text) => (
+                                <ReactMarkdown>{text}</ReactMarkdown>
+                            )}
+                            onChange={({ text }) =>
+                                form.setFieldsValue({ description: text })
+                            }
+                        />
                     </Form.Item>
 
                     <Form.Item label="Hành trình" name="itinerary">
-                        <TextArea rows={3} placeholder="Chi tiết hành trình" />
+                        <MdEditor
+                            style={{ height: "300px" }}
+                            value={form.getFieldValue("itinerary") || ""}
+                            renderHTML={(text) => (
+                                <ReactMarkdown>{text}</ReactMarkdown>
+                            )}
+                            onChange={({ text }) =>
+                                form.setFieldsValue({ itinerary: text })
+                            }
+                        />
                     </Form.Item>
 
                     <Form.Item
@@ -298,7 +317,7 @@ export default function UpdateTour() {
                             },
                         ]}
                     >
-                        <Input
+                        <InputNumber
                             type="number"
                             min={0}
                             placeholder="Nhập giá gốc"
@@ -306,15 +325,37 @@ export default function UpdateTour() {
                     </Form.Item>
 
                     <Form.Item label="Giá giảm" name="discount_price">
-                        <Input
+                        <InputNumber
                             type="number"
                             min={0}
                             placeholder="Nhập giá giảm (nếu có)"
                         />
                     </Form.Item>
-
-                    <Form.Item label="Thời gian tour" name="duration">
-                        <Input placeholder="VD: 3 ngày 2 đêm" />
+                    <Form.Item
+                        name="duration"
+                        label="Thời lượng tour"
+                        rules={[
+                            {
+                                required: true,
+                                message: "Vui lòng chọn thời lượng tour!",
+                            },
+                        ]}
+                    >
+                        <Select placeholder="Chọn thời lượng">
+                            <Select.Option value="1 ngày">1 ngày</Select.Option>
+                            <Select.Option value="2 ngày 1 đêm">
+                                2 ngày 1 đêm
+                            </Select.Option>
+                            <Select.Option value="3 ngày 2 đêm">
+                                3 ngày 2 đêm
+                            </Select.Option>
+                            <Select.Option value="4 ngày 3 đêm">
+                                4 ngày 3 đêm
+                            </Select.Option>
+                            <Select.Option value="5 ngày 4 đêm">
+                                5 ngày 4 đêm
+                            </Select.Option>
+                        </Select>
                     </Form.Item>
 
                     <Form.Item label="Tỉnh/thành điểm đến" name="destination">
