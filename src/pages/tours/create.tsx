@@ -329,7 +329,16 @@ export default function CreateTour() {
                     </Form.Item>
 
                     <Form.Item label="Hành trình" name="itinerary">
-                        <TextArea rows={3} placeholder="Chi tiết hành trình" />
+                        <MdEditor
+                            style={{ height: "300px" }}
+                            value={form.getFieldValue("itinerary") || ""}
+                            renderHTML={(text) => (
+                                <ReactMarkdown>{text}</ReactMarkdown>
+                            )}
+                            onChange={({ text }) =>
+                                form.setFieldsValue({ itinerary: text })
+                            }
+                        />
                     </Form.Item>
 
                     <Form.Item
@@ -605,9 +614,43 @@ export default function CreateTour() {
                                             ]}
                                             label="Mô tả hoạt động"
                                         >
-                                            <TextArea
-                                                rows={2}
-                                                placeholder="Mô tả hoạt động"
+                                            <MdEditor
+                                                style={{ height: "300px" }}
+                                                renderHTML={(text) => (
+                                                    <ReactMarkdown>
+                                                        {text}
+                                                    </ReactMarkdown>
+                                                )}
+                                                value={
+                                                    form.getFieldValue([
+                                                        "schedules",
+                                                        name,
+                                                        "activity_description",
+                                                    ]) || ""
+                                                }
+                                                onChange={({ text }) => {
+                                                    const schedules =
+                                                        form.getFieldValue(
+                                                            "schedules"
+                                                        ) || [];
+                                                    const newSchedules =
+                                                        schedules.map(
+                                                            (
+                                                                item: any,
+                                                                idx: number
+                                                            ) =>
+                                                                idx === name
+                                                                    ? {
+                                                                          ...item,
+                                                                          activity_description:
+                                                                              text,
+                                                                      }
+                                                                    : item
+                                                        );
+                                                    form.setFieldsValue({
+                                                        schedules: newSchedules,
+                                                    });
+                                                }}
                                             />
                                         </Form.Item>
                                         <Form.Item
