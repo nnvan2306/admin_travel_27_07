@@ -220,26 +220,17 @@ export default function Booking() {
     const [filterForm] = Form.useForm();
     const { contextHolder, notifySuccess, notifyError } = useNotifier();
 
-    // Fetch bookings
-    const fetchBookings = async (filters?: any) => {
+    const [allBookings, setAllBookings] = useState<BookingType[]>([]);
+    const [filteredBookings, setFilteredBookings] = useState<BookingType[]>([]);
+
+    // Fetch all bookings once
+    const fetchBookings = async () => {
         setLoading(true);
         try {
-            let url = "/bookings/all";
-            if (filters) {
-                const params = new URLSearchParams();
-                Object.keys(filters).forEach(key => {
-                    if (filters[key] !== undefined && filters[key] !== null && filters[key] !== "") {
-                        params.append(key, filters[key]);
-                    }
-                });
-                if (params.toString()) {
-                    url += `?${params.toString()}`;
-                }
-            }
-            
-            const response = await API.get(url);
+            const response = await API.get("/bookings/all");
             const data: BookingResponse = response.data;
-            setBookings(data.data);
+            setAllBookings(data.data);
+            setFilteredBookings(data.data);
         } catch (error: any) {
             notifyError(error?.response?.data?.message || "Không thể tải danh sách booking");
         } finally {
@@ -256,7 +247,11 @@ export default function Booking() {
         try {
             await API.put(`/bookings/${bookingId}/status`, { status: newStatus });
             notifySuccess("Cập nhật trạng thái thành công");
-            fetchBookings();
+            // Refresh data after status update
+            const response = await API.get("/bookings/all");
+            const data: BookingResponse = response.data;
+            setAllBookings(data.data);
+            setFilteredBookings(data.data);
         } catch (error: any) {
             notifyError(error?.response?.data?.message || "Cập nhật trạng thái thất bại");
         }
@@ -274,7 +269,11 @@ export default function Booking() {
                 try {
                     await API.delete(`/bookings/${bookingId}`);
                     notifySuccess("Xóa booking thành công");
-                    fetchBookings();
+                    // Refresh data after delete
+                    const response = await API.get("/bookings/all");
+                    const data: BookingResponse = response.data;
+                    setAllBookings(data.data);
+                    setFilteredBookings(data.data);
                 } catch (error: any) {
                     notifyError(error?.response?.data?.message || "Xóa booking thất bại");
                 }
@@ -282,22 +281,41 @@ export default function Booking() {
         });
     };
 
-    // Handle filter
+    // Handle filter with JavaScript
     const handleFilter = (values: any) => {
-        const filters: any = {};
-        
+        let filtered = [...allBookings];
+
+        // Search filter
         if (values.search) {
-            filters.search = values.search;
+            const searchTerm = values.search.toLowerCase();
+            filtered = filtered.filter(booking => 
+                booking.user.full_name.toLowerCase().includes(searchTerm) ||
+                booking.user.email.toLowerCase().includes(searchTerm) ||
+                booking.tour.tour_name.toLowerCase().includes(searchTerm) ||
+                booking.tour.category.category_name.toLowerCase().includes(searchTerm) ||
+                booking.tour.destinations.some(dest => 
+                    dest.name.toLowerCase().includes(searchTerm)
+                )
+            );
         }
+
+        // Status filter
         if (values.status) {
-            filters.status = values.status;
+            filtered = filtered.filter(booking => booking.status === values.status);
         }
+
+        // Date range filter
         if (values.dateRange && values.dateRange.length === 2) {
-            filters.start_date_from = values.dateRange[0].format("YYYY-MM-DD");
-            filters.start_date_to = values.dateRange[1].format("YYYY-MM-DD");
+            const startDate = values.dateRange[0].startOf('day');
+            const endDate = values.dateRange[1].endOf('day');
+            
+            filtered = filtered.filter(booking => {
+                const bookingDate = dayjs(booking.start_date);
+                return bookingDate.isAfter(startDate) && bookingDate.isBefore(endDate);
+            });
         }
-        
-        fetchBookings(filters);
+
+        setFilteredBookings(filtered);
     };
 
     // Table columns
@@ -521,7 +539,7 @@ export default function Booking() {
                                     <Button
                                         onClick={() => {
                                             filterForm.resetFields();
-                                            fetchBookings();
+                                            setFilteredBookings(allBookings);
                                         }}
                                     >
                                         Làm mới
@@ -537,15 +555,15 @@ export default function Booking() {
                         <Col span={6}>
                             <Card className="text-center shadow-sm">
                                 <div className="text-2xl font-bold text-blue-600">
-                                    {bookings.length}
+                                    {filteredBookings.length}
                                 </div>
-                                <div className="text-gray-600">Tổng booking</div>
+                                <div className="text-gray-600">Kết quả tìm kiếm</div>
                             </Card>
                         </Col>
                         <Col span={6}>
                             <Card className="text-center shadow-sm">
                                 <div className="text-2xl font-bold text-orange-600">
-                                    {bookings.filter(b => b.status === "pending").length}
+                                    {filteredBookings.filter(b => b.status === "pending").length}
                                 </div>
                                 <div className="text-gray-600">Chờ xác nhận</div>
                             </Card>
@@ -553,7 +571,7 @@ export default function Booking() {
                         <Col span={6}>
                             <Card className="text-center shadow-sm">
                                 <div className="text-2xl font-bold text-green-600">
-                                    {bookings.filter(b => b.status === "completed").length}
+                                    {filteredBookings.filter(b => b.status === "completed").length}
                                 </div>
                                 <div className="text-gray-600">Hoàn thành</div>
                             </Card>
@@ -561,7 +579,7 @@ export default function Booking() {
                         <Col span={6}>
                             <Card className="text-center shadow-sm">
                                 <div className="text-2xl font-bold text-red-600">
-                                    {bookings.filter(b => b.status === "cancelled").length}
+                                    {filteredBookings.filter(b => b.status === "cancelled").length}
                                 </div>
                                 <div className="text-gray-600">Đã hủy</div>
                             </Card>
@@ -572,11 +590,11 @@ export default function Booking() {
                     <Card className="shadow-sm">
                         <Table
                             columns={columns}
-                            dataSource={bookings}
+                            dataSource={filteredBookings}
                             rowKey="booking_id"
                             loading={loading}
                             pagination={{
-                                total: bookings.length,
+                                total: filteredBookings.length,
                                 pageSize: 10,
                                 showSizeChanger: true,
                                 showQuickJumper: true,
