@@ -28,6 +28,7 @@ import ProtectedRoute from "@/contexts/ProtectedRoute";
 import ProtectedRouteRole from "./ProtectedRoute";
 import Albums from "@/pages/albums/albums";
 import AlbumImages from "@/pages/albums/albumImages";
+import Booking from "@/pages/tours/Booking";
 
 export default function AppRoutes() {
     const dispatch = useDispatch<AppDispatch>();
@@ -73,6 +74,7 @@ export default function AppRoutes() {
                 {/* === TOURS === */}
                 <Route path="tours" element={<Tours />} />
                 <Route path="tours/category" element={<TourCategory />} />
+                <Route path="tours/book" element={<Booking />} />
                 <Route path="tour/create" element={<CreateTour />} />
                 <Route path="tour/edit/:id" element={<CreateTour />} />
                 {/* === DESTINATIONS === */}
