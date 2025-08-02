@@ -68,6 +68,7 @@ interface TourType {
     status: string;
     image: string | null; // filename
     images: string[]; // album images filenames
+    schedules: TourSchedule[];
 }
 
 export default function CreateTour() {
@@ -90,7 +91,8 @@ export default function CreateTour() {
         if (!id) return;
         try {
             const res = await API.get(`/tours/${id}`);
-            const tour: TourType = res.data;
+            const tour: TourType = res?.data;
+            console.log("tour >>> ", tour);
 
             // Gán dữ liệu vào form
             form.setFieldsValue({
@@ -98,12 +100,16 @@ export default function CreateTour() {
                 tour_name: tour.tour_name,
                 description: tour.description,
                 itinerary: tour.itinerary,
-                price: tour.price,
-                discount_price: tour.discount_price,
+                price: Number(tour.price),
+                discount_price: Number(tour.discount_price),
                 destination: tour.destination,
                 destination_ids: tour.destination_ids,
                 duration: tour.duration,
                 status: tour.status,
+                schedules: (tour?.schedules || []).map((i) => ({
+                    ...i,
+                    activity_description: i.activity_description || "",
+                })),
             });
 
             // Ảnh đại diện nếu có => đưa vào fileList để hiển thị preview
@@ -384,7 +390,7 @@ export default function CreateTour() {
                 });
             }
 
-            await API.post(`/tours/${id}?_method=PUT`, formData, {
+            await API.put(`/tours/${id}?_method=PUT`, formData, {
                 headers: { "Content-Type": "multipart/form-data" },
             });
 
