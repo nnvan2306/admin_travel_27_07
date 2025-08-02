@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const API = axios.create({
-    baseURL: "https://dev-test.fstack.io.vn/api",
+    baseURL: "http://localhost:8000/api",
     headers: {
         "Content-Type": "application/json",
         Accept: "application/json",
