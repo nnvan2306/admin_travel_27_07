@@ -29,6 +29,7 @@ import ProtectedRouteRole from "./ProtectedRoute";
 import Albums from "@/pages/albums/albums";
 import AlbumImages from "@/pages/albums/albumImages";
 import Booking from "@/pages/tours/Booking";
+import Review from "@/pages/Review";
 
 export default function AppRoutes() {
     const dispatch = useDispatch<AppDispatch>();
@@ -99,6 +100,9 @@ export default function AppRoutes() {
                 <Route path="motorbikes" element={<MotorbikesPage />} />
                 <Route path="bus-routes" element={<BusRoutesPage />} />
                 <Route path="hotels" element={<HotelsPage />} />
+
+                {/* Review */}
+                <Route path="reviews" element={<Review />} />
             </Route>
 
             <Route path="*" element={<NotFound />} />
