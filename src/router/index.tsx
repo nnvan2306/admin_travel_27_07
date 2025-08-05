@@ -30,6 +30,8 @@ import Albums from "@/pages/albums/albums";
 import AlbumImages from "@/pages/albums/albumImages";
 import Booking from "@/pages/tours/Booking";
 import Review from "@/pages/Review";
+import Blogs from "@/pages/Blog";
+import BlogNew from "@/pages/Blog/BlogNew";
 
 export default function AppRoutes() {
     const dispatch = useDispatch<AppDispatch>();
@@ -103,6 +105,10 @@ export default function AppRoutes() {
 
                 {/* Review */}
                 <Route path="reviews" element={<Review />} />
+                {/* Blogs */}
+                <Route path="blogs" element={<Blogs />} />
+                <Route path="blogs/new" element={<BlogNew />} />
+                <Route path="blogs/edit/:id" element={<BlogNew />} />
             </Route>
 
             <Route path="*" element={<NotFound />} />
