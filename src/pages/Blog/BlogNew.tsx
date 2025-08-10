@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useNotifier } from "@/hooks/useNotifier";
 import { API } from "@/lib/axios";
-import React, { useEffect, useState } from "react";
 import type { ChangeEvent } from "react";
+import React, { useEffect, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import MdEditor from "react-markdown-editor-lite";
 import { useNavigate, useParams } from "react-router-dom";
@@ -13,6 +13,7 @@ interface BlogFormData {
     title: string;
     description: string;
     markdown: string;
+    status: "published" | "draft";
 }
 
 interface FormErrors {
@@ -32,11 +33,43 @@ const BlogNew: React.FC = () => {
         title: "",
         description: "",
         markdown: "",
+        status: "published",
     });
     const [thumbnailPreview, setThumbnailPreview] = useState<string>("");
     const [loading, setLoading] = useState<boolean>(false);
     const [errors, setErrors] = useState<FormErrors>({});
     const { notifySuccess, notifyError } = useNotifier();
+
+    // Fetch blog data if editing
+    useEffect(() => {
+        const fetchBlog = async () => {
+            if (!id) return;
+
+            try {
+                const res = await API.get(`/blogs/${id}`);
+                if (res.data && res.data.data) {
+                    const blog = res.data.data;
+                    setFormData({
+                        thumbnail: null,
+                        location: blog.location,
+                        title: blog.title,
+                        description: blog.description,
+                        markdown: blog.markdown,
+                        status: blog.status,
+                    });
+                    if (blog.thumbnail_url) {
+                        setThumbnailPreview(blog.thumbnail_url);
+                    }
+                }
+            } catch (error) {
+                console.error("Error fetching blog:", error);
+                notifyError("Không thể tải thông tin blog");
+                navigate("/blogs");
+            }
+        };
+
+        fetchBlog();
+    }, [id]);
 
     const handleInputChange = (
         field: keyof BlogFormData,
@@ -55,20 +88,30 @@ const BlogNew: React.FC = () => {
         }
     };
 
+    // Cập nhật hàm handleFileUpload để kiểm tra định dạng file chặt chẽ hơn
     const handleFileUpload = (event: ChangeEvent<HTMLInputElement>): void => {
         const file = event.target.files?.[0];
         if (file) {
-            if (file.type.startsWith("image/")) {
+            // Kiểm tra định dạng file
+            const validTypes = [
+                "image/jpeg",
+                "image/png",
+                "image/jpg",
+                "image/gif",
+            ];
+            if (validTypes.includes(file.type)) {
                 if (file.size <= 2 * 1024 * 1024) {
-                    // 2MB limit
+                    // 2MB
                     const url = URL.createObjectURL(file);
                     setThumbnailPreview(url);
                     handleInputChange("thumbnail", file);
                 } else {
-                    alert("Hình ảnh phải nhỏ hơn 2MB!");
+                    notifyError("Hình ảnh phải nhỏ hơn 2MB!");
                 }
             } else {
-                alert("Chỉ có thể upload file hình ảnh!");
+                notifyError(
+                    "Chỉ chấp nhận file định dạng: JPEG, PNG, JPG, GIF"
+                );
             }
         }
     };
@@ -76,7 +119,7 @@ const BlogNew: React.FC = () => {
     const validateForm = (): boolean => {
         const newErrors: FormErrors = {};
 
-        if (!formData.thumbnail) {
+        if (!id && !formData.thumbnail && !thumbnailPreview) {
             newErrors.thumbnail = "Vui lòng upload thumbnail!";
         }
 
@@ -111,67 +154,90 @@ const BlogNew: React.FC = () => {
 
         setLoading(true);
         try {
-            console.log("Blog data:", formData);
-            let payload = {
-                ...formData,
-            } as any;
-            if (id) {
-                payload.id = id;
-            }
-            const res = id
-                ? await API.put(`/blogs`, payload, {
-                      headers: { "Content-Type": "multipart/form-data" },
-                  })
-                : await API.post("/blog", payload, {
-                      headers: { "Content-Type": "multipart/form-data" },
-                  });
+            const formPayload = new FormData();
 
-            notifySuccess(
-                id ? "Blog đã được cập nhật!" : "Blog đã được tạo thành công!"
-            );
-            setFormData({
-                thumbnail: null,
-                location: "",
-                title: "",
-                description: "",
-                markdown: "",
+            // Ensure required fields are present
+            formPayload.append("title", formData.title.trim());
+            formPayload.append("markdown", formData.markdown.trim());
+
+            // Optional fields
+            if (formData.description) {
+                formPayload.append("description", formData.description.trim());
+            }
+            if (formData.location) {
+                formPayload.append("location", formData.location.trim());
+            }
+            if (formData.status) {
+                formPayload.append("status", formData.status);
+            }
+
+            // Handle thumbnail if present
+            if (formData.thumbnail instanceof File) {
+                formPayload.append("thumbnail", formData.thumbnail);
+            }
+
+            // Log request data for debugging
+            console.log("Request Data:", {
+                title: formData.title,
+                markdown: formData.markdown,
+                description: formData.description,
+                location: formData.location,
+                status: formData.status,
+                hasFile: formData.thumbnail instanceof File,
             });
-            navigate("/blogs");
-            setThumbnailPreview("");
-        } catch (error) {
-            console.log(error);
-            notifyError("Có lỗi xảy ra khi tạo blog!");
+
+            const config = {
+                headers: {
+                    Accept: "application/json",
+                    "Content-Type": "multipart/form-data",
+                },
+            };
+
+            let response;
+            if (id) {
+                response = await API.post(`/blogs/${id}/update-with-files`, formPayload, config);
+            } else {
+                response = await API.post("/blogs", formPayload, config);
+            }
+
+            if (response.status === 200 || response.status === 201) {
+                notifySuccess(
+                    id
+                        ? "Blog đã được cập nhật thành công!"
+                        : "Blog đã được tạo thành công!"
+                );
+                navigate("/blogs");
+            }
+        } catch (error: any) {
+            console.error("Validation Error:", error.response?.data);
+
+            if (error.response?.data?.errors) {
+                const errors = error.response.data.errors;
+                Object.keys(errors).forEach((key) => {
+                    notifyError(`${key}: ${errors[key][0]}`);
+                });
+            } else {
+                notifyError(
+                    error.response?.data?.message ||
+                        (id ? "Lỗi khi cập nhật blog!" : "Lỗi khi tạo blog!")
+                );
+            }
         } finally {
             setLoading(false);
         }
     };
-
-    useEffect(() => {
-        if (id) {
-            const fetch = async () => {
-                const res = await API.get(`/blogs/${id}`);
-            };
-            fetch();
-        }
-    }, [id]);
-
-    // const handlePreview = (): void => {
-    //     if (formData.markdown.trim()) {
-    //         alert("Tính năng xem trước đang phát triển");
-    //     } else {
-    //         alert("Vui lòng nhập nội dung trước khi xem trước");
-    //     }
-    // };
 
     return (
         <div className="min-h-screen bg-gray-50 py-8">
             <div className="max-w-4xl mx-auto px-4">
                 <div className="mb-8">
                     <h1 className="text-3xl font-bold text-gray-900 mb-2">
-                        Tạo Blog Mới
+                        {id ? "Chỉnh sửa Blog" : "Tạo Blog Mới"}
                     </h1>
                     <p className="text-gray-600">
-                        Tạo và chia sẻ nội dung blog của bạn
+                        {id
+                            ? "Cập nhật thông tin blog của bạn"
+                            : "Tạo và chia sẻ nội dung blog của bạn"}
                     </p>
                 </div>
 
@@ -349,56 +415,57 @@ const BlogNew: React.FC = () => {
 
                         {/* Action Buttons */}
                         <div className="flex justify-end space-x-4 pt-6">
-                            {/* <button
+                            <button
                                 type="button"
-                                onClick={handlePreview}
-                                className="cursor-pointer px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-colors flex items-center space-x-2"
+                                onClick={() => navigate("/blogs")}
+                                className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-colors"
                             >
-                                <svg
-                                    className="w-5 h-5"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
-                                >
-                                    <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth="2"
-                                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                                    />
-                                    <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth="2"
-                                        d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-                                    />
-                                </svg>
-                                <span>Xem trước</span>
-                            </button> */}
+                                Hủy
+                            </button>
                             <button
                                 type="button"
                                 onClick={handleSubmit}
                                 disabled={loading}
                                 style={{
-                                    color: "#fff",
+                                    marginLeft: "6px",
+                                    color: "white",
                                 }}
-                                className="cursor-pointer px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 outline-none transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+                                className={`px-6 py-3 rounded-lg ml-[6px] text-white font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 flex items-center space-x-2 ${
+                                    loading
+                                        ? "bg-blue-400 cursor-not-allowed"
+                                        : "bg-blue-600 hover:bg-blue-700 cursor-pointer"
+                                }`}
                             >
-                                <svg
-                                    className="w-5 h-5"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
-                                >
-                                    <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth="2"
-                                        d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3-3m0 0l-3 3m3-3v12"
-                                    />
-                                </svg>
+                                {loading && (
+                                    <svg
+                                        className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        fill="none"
+                                        viewBox="0 0 24 24"
+                                    >
+                                        <circle
+                                            className="opacity-25"
+                                            cx="12"
+                                            cy="12"
+                                            r="10"
+                                            stroke="currentColor"
+                                            strokeWidth="4"
+                                        />
+                                        <path
+                                            className="opacity-75"
+                                            fill="currentColor"
+                                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                        />
+                                    </svg>
+                                )}
                                 <span>
-                                    {loading ? "Đang tạo..." : "Tạo Blog"}
+                                    {loading
+                                        ? id
+                                            ? "Đang cập nhật..."
+                                            : "Đang tạo..."
+                                        : id
+                                        ? "Cập nhật Blog"
+                                        : "Tạo Blog"}
                                 </span>
                             </button>
                         </div>

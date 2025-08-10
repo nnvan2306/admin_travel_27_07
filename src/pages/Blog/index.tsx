@@ -1,6 +1,6 @@
 import { API } from "@/lib/axios";
-import React, { useState, useEffect } from "react";
 import type { ChangeEvent } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 interface Blog {
@@ -65,7 +65,7 @@ const DeleteModal: React.FC<DeleteModalProps> = ({
                         hoàn tác.
                     </p>
                 </div>
-                <div className="flex justify-end space-x-3">
+                <div className="flex justify-end space-x-3 gap-2">
                     <button
                         onClick={onCancel}
                         className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-colors"
@@ -107,6 +107,22 @@ const Blogs: React.FC = () => {
             setLoading(true);
             try {
                 const res = await API.get("/blogs");
+                if (res.data && res.data.data) {
+                    setBlogs(
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                        res.data.data.data.map((blog: any) => ({
+                            id: blog.id.toString(),
+                            thumbnail:
+                                blog.thumbnail_url ||
+                                "https://www.shoshinsha-design.com/wp-content/uploads/2020/05/noimage-1-760x460.png", // Thêm ảnh placeholder nếu không có thumbnail
+                            location: blog.location,
+                            title: blog.title,
+                            description: blog.description,
+                            createdAt: blog.created_at,
+                            status: blog.status,
+                        }))
+                    );
+                }
             } catch (error) {
                 console.error("Error fetching blogs:", error);
             } finally {
@@ -133,12 +149,36 @@ const Blogs: React.FC = () => {
         });
     };
 
-    const handleDeleteConfirm = () => {
+    // Thêm state để theo dõi trạng thái xóa
+    const [deleteLoading, setDeleteLoading] = useState<boolean>(false);
+
+    // Cập nhật hàm handleDeleteConfirm để gọi API xóa
+    const handleDeleteConfirm = async () => {
         if (deleteModal.blog) {
-            setDeleteModal({
-                isOpen: false,
-                blog: null,
-            });
+            try {
+                setDeleteLoading(true);
+                // Gọi API để xóa blog
+                await API.delete(`/blogs/${deleteModal.blog.id}`);
+
+                // Cập nhật state blogs sau khi xóa thành công
+                setBlogs(
+                    blogs.filter((blog) => blog.id !== deleteModal.blog?.id)
+                );
+
+                // Hiển thị thông báo thành công (nếu bạn có hệ thống thông báo)
+                // notifySuccess("Xóa blog thành công");
+            } catch (error) {
+                console.error("Error deleting blog:", error);
+                // Hiển thị thông báo lỗi (nếu bạn có hệ thống thông báo)
+                // notifyError("Có lỗi xảy ra khi xóa blog");
+            } finally {
+                setDeleteLoading(false);
+                // Đóng modal
+                setDeleteModal({
+                    isOpen: false,
+                    blog: null,
+                });
+            }
         }
     };
 
@@ -149,242 +189,237 @@ const Blogs: React.FC = () => {
         });
     };
     return (
-        <div className="min-h-screen bg-gray-50 py-8">
-            <div className="max-w-7xl mx-auto px-4">
-                {/* Header */}
+        <div className="min-h-screen bg-gray-100 py-8">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                {/* Header Section */}
                 <div className="mb-8">
-                    <h1 className="text-3xl font-bold text-gray-900 mb-2">
-                        Quản lý Blogs
-                    </h1>
-                    <p className="text-gray-600">
-                        Quản lý và chỉnh sửa các bài blog của bạn
-                    </p>
+                    <div className="flex justify-between items-center">
+                        <div>
+                            <h1 className="text-3xl font-bold text-gray-900">
+                                Quản lý Blogs
+                            </h1>
+                            <p className="mt-2 text-sm text-gray-600">
+                                Quản lý và chỉnh sửa các bài viết blog của bạn
+                            </p>
+                        </div>
+                        <button
+                            style={{
+                                color: "white",
+                            }}
+                            onClick={() => navigate("/blogs/new")}
+                            className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                        >
+                            <svg
+                                className="-ml-1 mr-2 h-5 w-5"
+                                xmlns="http://www.w3.org/2000/svg"
+                                viewBox="0 0 20 20"
+                                fill="currentColor"
+                            >
+                                <path
+                                    fillRule="evenodd"
+                                    d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z"
+                                    clipRule="evenodd"
+                                />
+                            </svg>
+                            Tạo blog mới
+                        </button>
+                    </div>
                 </div>
 
-                {/* Search and Actions */}
-                <div className="bg-white rounded-lg shadow p-6 mb-6">
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
-                        <div className="flex-1 max-w-md">
-                            <div className="relative">
-                                <input
-                                    type="text"
-                                    placeholder="Tìm kiếm blog..."
-                                    value={searchTerm}
-                                    onChange={handleSearch}
-                                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-                                />
+                {/* Search Bar */}
+                <div className="bg-white shadow-sm rounded-lg p-4 mb-6">
+                    <div className="max-w-lg w-full">
+                        <label htmlFor="search" className="sr-only">
+                            Tìm kiếm
+                        </label>
+                        <div className="relative">
+                            <input
+                                type="text"
+                                id="search"
+                                className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                placeholder="Tìm kiếm blog..."
+                                value={searchTerm}
+                                onChange={handleSearch}
+                            />
+                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                 <svg
-                                    className="absolute left-3 top-2.5 w-5 h-5 text-gray-400"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
+                                    className="h-5 w-5 text-gray-400"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    viewBox="0 0 20 20"
+                                    fill="currentColor"
                                 >
                                     <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth="2"
-                                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                                        fillRule="evenodd"
+                                        d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"
+                                        clipRule="evenodd"
                                     />
                                 </svg>
                             </div>
                         </div>
-                        <button
-                            className="cursor-pointer px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 outline-none transition-colors flex items-center space-x-2"
-                            style={{
-                                color: "#fff",
-                            }}
-                            onClick={() => navigate("/blogs/new")}
-                        >
+                    </div>
+                </div>
+
+                {/* Blog List */}
+                <div className="bg-white shadow-sm rounded-lg overflow-hidden">
+                    {loading ? (
+                        <div className="p-8 flex justify-center items-center">
+                            <div className="flex flex-col items-center">
+                                <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-indigo-600"></div>
+                                <p className="mt-2 text-sm text-gray-500">
+                                    Đang tải...
+                                </p>
+                            </div>
+                        </div>
+                    ) : blogs.length === 0 ? (
+                        <div className="text-center py-12">
                             <svg
-                                className="w-5 h-5"
+                                className="mx-auto h-12 w-12 text-gray-400"
                                 fill="none"
-                                stroke="currentColor"
                                 viewBox="0 0 24 24"
+                                stroke="currentColor"
                             >
                                 <path
                                     strokeLinecap="round"
                                     strokeLinejoin="round"
                                     strokeWidth="2"
-                                    d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
                                 />
                             </svg>
-                            <span>Tạo blog mới</span>
-                        </button>
-                    </div>
-                </div>
-
-                {/* Table */}
-                <div className="bg-white rounded-lg shadow overflow-hidden">
-                    {loading ? (
-                        <div className="p-8 text-center">
-                            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                            <p className="mt-2 text-gray-600">Đang tải...</p>
+                            <h3 className="mt-2 text-sm font-medium text-gray-900">
+                                Không có bài viết nào
+                            </h3>
+                            <p className="mt-1 text-sm text-gray-500">
+                                Bắt đầu bằng việc tạo một bài viết mới.
+                            </p>
                         </div>
                     ) : (
-                        <>
-                            <div className="overflow-x-auto">
-                                <table className="w-full">
-                                    <thead className="bg-gray-50">
-                                        <tr>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                Blog
-                                            </th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                Địa điểm
-                                            </th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                Ngày tạo
-                                            </th>
-                                            {/* <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                Trạng thái
-                                            </th> */}
-                                            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <div className="overflow-x-auto">
+                            <table className="min-w-full divide-y divide-gray-200">
+                                <thead className="bg-gray-50">
+                                    <tr>
+                                        <th
+                                            scope="col"
+                                            className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                                        >
+                                            Nội dung
+                                        </th>
+                                        <th
+                                            scope="col"
+                                            className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                                        >
+                                            Địa điểm
+                                        </th>
+                                        <th
+                                            scope="col"
+                                            className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                                        >
+                                            Ngày tạo
+                                        </th>
+                                        <th
+                                            scope="col"
+                                            className="relative px-6 py-3"
+                                        >
+                                            <span className="sr-only">
                                                 Hành động
-                                            </th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="bg-white divide-y divide-gray-200">
-                                        {blogs.map((blog) => (
-                                            <tr
-                                                key={blog.id}
-                                                className="hover:bg-gray-50"
-                                            >
-                                                <td className="px-6 py-4">
-                                                    <div className="flex items-center">
+                                            </span>
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody className="bg-white divide-y divide-gray-200">
+                                    {blogs.map((blog) => (
+                                        <tr
+                                            key={blog.id}
+                                            className="hover:bg-gray-50"
+                                        >
+                                            <td className="px-6 py-4">
+                                                <div className="flex items-center">
+                                                    <div className="h-16 w-20 flex-shrink-0 overflow-hidden rounded-md">
                                                         <img
                                                             src={blog.thumbnail}
-                                                            alt={blog.title}
-                                                            className="w-16 h-12 object-cover rounded-lg mr-4"
+                                                            alt=""
+                                                            className="h-full w-full object-cover"
                                                         />
-                                                        <div>
-                                                            <h3 className="text-sm font-semibold text-gray-900 line-clamp-2">
-                                                                {blog.title}
-                                                            </h3>
-                                                            <p className="text-sm text-gray-500 mt-1 line-clamp-2">
-                                                                {
-                                                                    blog.description
-                                                                }
-                                                            </p>
+                                                    </div>
+                                                    <div className="ml-4">
+                                                        <div className="font-medium text-gray-900 line-clamp-1">
+                                                            {blog.title}
+                                                        </div>
+                                                        <div className="text-sm text-gray-500 line-clamp-2">
+                                                            {blog.description}
                                                         </div>
                                                     </div>
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap">
-                                                    <span className="text-sm text-gray-900">
-                                                        {blog.location}
-                                                    </span>
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap">
-                                                    <span className="text-sm text-gray-900">
-                                                        {new Date(
-                                                            blog.createdAt
-                                                        ).toLocaleDateString(
-                                                            "vi-VN"
-                                                        )}
-                                                    </span>
-                                                </td>
-                                                {/* <td className="px-6 py-4 whitespace-nowrap">
-                                                    <span
-                                                        className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                                                            blog.status ===
-                                                            "published"
-                                                                ? "bg-green-100 text-green-800"
-                                                                : "bg-yellow-100 text-yellow-800"
-                                                        }`}
+                                                </div>
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                                {blog.location}
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                {new Date(
+                                                    blog.createdAt
+                                                ).toLocaleDateString("vi-VN")}
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                                <div className="flex justify-end space-x-2">
+                                                    <button
+                                                        onClick={() =>
+                                                            handleEdit(blog.id)
+                                                        }
+                                                        className="text-indigo-600 hover:text-indigo-900 p-2 hover:bg-indigo-50 rounded-full"
                                                     >
-                                                        {blog.status ===
-                                                        "published"
-                                                            ? "Đã xuất bản"
-                                                            : "Bản nháp"}
-                                                    </span>
-                                                </td> */}
-                                                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                                    <div className="flex items-center justify-end space-x-2">
-                                                        <button
-                                                            onClick={() =>
-                                                                handleEdit(
-                                                                    blog.id
-                                                                )
-                                                            }
-                                                            className="text-blue-600 hover:text-blue-900 p-2 hover:bg-blue-50 rounded-lg transition-colors"
-                                                            title="Chỉnh sửa"
-                                                            style={{
-                                                                color: "blue",
-                                                            }}
+                                                        <svg
+                                                            className="h-5 w-5"
+                                                            fill="none"
+                                                            viewBox="0 0 24 24"
+                                                            stroke="currentColor"
                                                         >
-                                                            <svg
-                                                                className="w-4 h-4"
-                                                                fill="none"
-                                                                stroke="currentColor"
-                                                                viewBox="0 0 24 24"
-                                                            >
-                                                                <path
-                                                                    strokeLinecap="round"
-                                                                    strokeLinejoin="round"
-                                                                    strokeWidth="2"
-                                                                    d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                                                                />
-                                                            </svg>
-                                                        </button>
-                                                        <button
-                                                            onClick={() =>
-                                                                handleDeleteClick(
-                                                                    blog
-                                                                )
-                                                            }
-                                                            className="text-red-600 hover:text-red-900 p-2 hover:bg-red-50 rounded-lg transition-colors"
-                                                            title="Xóa"
-                                                            style={{
-                                                                color: "red",
-                                                            }}
+                                                            <path
+                                                                strokeLinecap="round"
+                                                                strokeLinejoin="round"
+                                                                strokeWidth="2"
+                                                                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                                                            />
+                                                        </svg>
+                                                    </button>
+                                                    <button
+                                                        onClick={() =>
+                                                            handleDeleteClick(
+                                                                blog
+                                                            )
+                                                        }
+                                                        className="text-red-600 hover:text-red-900 p-2 hover:bg-red-50 rounded-full"
+                                                    >
+                                                        <svg
+                                                            className="h-5 w-5"
+                                                            fill="none"
+                                                            viewBox="0 0 24 24"
+                                                            stroke="currentColor"
                                                         >
-                                                            <svg
-                                                                className="w-4 h-4"
-                                                                fill="none"
-                                                                stroke="currentColor"
-                                                                viewBox="0 0 24 24"
-                                                            >
-                                                                <path
-                                                                    strokeLinecap="round"
-                                                                    strokeLinejoin="round"
-                                                                    strokeWidth="2"
-                                                                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                                                                />
-                                                            </svg>
-                                                        </button>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-
-                            {/* Pagination */}
-                            {/* {totalPages > 1 && (
-                                <div className="px-6 py-4 border-t border-gray-200">
-                                    <div className="flex items-center justify-between">
-                                        <div className="text-sm text-gray-700">
-                                            Trang {currentPage} / {totalPages}
-                                        </div>
-                                        {renderPagination()}
-                                        <div className="text-sm text-gray-700">
-                                            Tổng cộng: {mockBlogs.length} blogs
-                                        </div>
-                                    </div>
-                                </div>
-                            )} */}
-                        </>
+                                                            <path
+                                                                strokeLinecap="round"
+                                                                strokeLinejoin="round"
+                                                                strokeWidth="2"
+                                                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                                                            />
+                                                        </svg>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
                     )}
                 </div>
-
-                {/* Delete Modal */}
-                <DeleteModal
-                    isOpen={deleteModal.isOpen}
-                    blog={deleteModal.blog}
-                    onConfirm={handleDeleteConfirm}
-                    onCancel={handleDeleteCancel}
-                />
             </div>
+
+            {/* Delete Modal */}
+            <DeleteModal
+                isOpen={deleteModal.isOpen}
+                blog={deleteModal.blog}
+                onConfirm={handleDeleteConfirm}
+                onCancel={handleDeleteCancel}
+            />
         </div>
     );
 };

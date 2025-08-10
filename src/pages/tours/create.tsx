@@ -92,7 +92,6 @@ export default function CreateTour() {
         try {
             const res = await API.get(`/tours/${id}`);
             const tour: TourType = res?.data;
-            console.log("tour >>> ", tour);
 
             // Gán dữ liệu vào form
             form.setFieldsValue({
@@ -343,6 +342,7 @@ export default function CreateTour() {
 
     const handleUpdateTour = async (values: any) => {
         try {
+            
             setLoading(true);
 
             const formData = new FormData();
@@ -406,6 +406,8 @@ export default function CreateTour() {
     };
 
     const onFinish = async (values: any) => {
+        console.log("lot khong?")
+        
         if (id) {
             handleUpdateTour(values);
         } else {
