@@ -11,6 +11,7 @@ interface Blog {
     description: string;
     createdAt: string;
     status: "published" | "draft";
+    tags?: string; // Thêm trường tags
 }
 
 interface DeleteModalProps {
@@ -120,6 +121,7 @@ const Blogs: React.FC = () => {
                             description: blog.description,
                             createdAt: blog.created_at,
                             status: blog.status,
+                            tags: blog.tags || "", // Thêm tags vào đây
                         }))
                     );
                 }
@@ -188,6 +190,29 @@ const Blogs: React.FC = () => {
             blog: null,
         });
     };
+
+    // Hàm xử lý hiển thị tags
+    const renderTags = (tagsString?: string) => {
+        if (!tagsString) return null;
+
+        const tagArray = tagsString
+            .split(",")
+            .filter((tag) => tag.trim() !== "");
+
+        return (
+            <div className="flex flex-wrap gap-1 mt-1">
+                {tagArray.map((tag, index) => (
+                    <span
+                        key={index}
+                        className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800"
+                    >
+                        {tag.trim()}
+                    </span>
+                ))}
+            </div>
+        );
+    };
+
     return (
         <div className="min-h-screen bg-gray-100 py-8">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -313,6 +338,12 @@ const Blogs: React.FC = () => {
                                             scope="col"
                                             className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                                         >
+                                            Tags
+                                        </th>
+                                        <th
+                                            scope="col"
+                                            className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                                        >
                                             Ngày tạo
                                         </th>
                                         <th
@@ -352,6 +383,9 @@ const Blogs: React.FC = () => {
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                                 {blog.location}
+                                            </td>
+                                            <td className="px-6 py-4 text-sm text-gray-900">
+                                                {renderTags(blog.tags)}
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                                 {new Date(

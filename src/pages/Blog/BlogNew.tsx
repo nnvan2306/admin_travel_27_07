@@ -14,6 +14,7 @@ interface BlogFormData {
     description: string;
     markdown: string;
     status: "published" | "draft";
+    tags: string; // Thêm trường tags
 }
 
 interface FormErrors {
@@ -22,6 +23,7 @@ interface FormErrors {
     title?: string;
     description?: string;
     markdown?: string;
+    tags?: string;
 }
 
 const BlogNew: React.FC = () => {
@@ -34,6 +36,7 @@ const BlogNew: React.FC = () => {
         description: "",
         markdown: "",
         status: "published",
+        tags: "", // Khởi tạo giá trị rỗng cho tags
     });
     const [thumbnailPreview, setThumbnailPreview] = useState<string>("");
     const [loading, setLoading] = useState<boolean>(false);
@@ -56,6 +59,7 @@ const BlogNew: React.FC = () => {
                         description: blog.description,
                         markdown: blog.markdown,
                         status: blog.status,
+                        tags: blog.tags || "", // Lấy tags từ dữ liệu blog
                     });
                     if (blog.thumbnail_url) {
                         setThumbnailPreview(blog.thumbnail_url);
@@ -86,6 +90,28 @@ const BlogNew: React.FC = () => {
                 [field]: "",
             }));
         }
+    };
+
+    // Hàm hiển thị các tags dưới dạng badge
+    const renderTagsPreview = () => {
+        if (!formData.tags) return null;
+
+        const tagArray = formData.tags
+            .split(",")
+            .filter((tag) => tag.trim() !== "");
+
+        return (
+            <div className="flex flex-wrap gap-2 mt-2">
+                {tagArray.map((tag, index) => (
+                    <span
+                        key={index}
+                        className="px-2 py-1 bg-blue-100 text-blue-800 text-sm rounded-full"
+                    >
+                        {tag.trim()}
+                    </span>
+                ))}
+            </div>
+        );
     };
 
     // Cập nhật hàm handleFileUpload để kiểm tra định dạng file chặt chẽ hơn
@@ -171,6 +197,11 @@ const BlogNew: React.FC = () => {
                 formPayload.append("status", formData.status);
             }
 
+            // Thêm tags vào form data
+            if (formData.tags) {
+                formPayload.append("tags", formData.tags.trim());
+            }
+
             // Handle thumbnail if present
             if (formData.thumbnail instanceof File) {
                 formPayload.append("thumbnail", formData.thumbnail);
@@ -183,6 +214,7 @@ const BlogNew: React.FC = () => {
                 description: formData.description,
                 location: formData.location,
                 status: formData.status,
+                tags: formData.tags,
                 hasFile: formData.thumbnail instanceof File,
             });
 
@@ -195,7 +227,11 @@ const BlogNew: React.FC = () => {
 
             let response;
             if (id) {
-                response = await API.post(`/blogs/${id}/update-with-files`, formPayload, config);
+                response = await API.post(
+                    `/blogs/${id}/update-with-files`,
+                    formPayload,
+                    config
+                );
             } else {
                 response = await API.post("/blogs", formPayload, config);
             }
@@ -383,6 +419,29 @@ const BlogNew: React.FC = () => {
                             </div>
                         </div>
 
+                        {/* Tags - THÊM MỚI */}
+                        <div>
+                            <label className="block text-lg font-semibold text-gray-700 mb-2">
+                                Tags
+                            </label>
+                            <input
+                                type="text"
+                                placeholder="Nhập các tags cách nhau bởi dấu phẩy (ví dụ: du lịch,ẩm thực,phượt)"
+                                value={formData.tags}
+                                onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                                    handleInputChange("tags", e.target.value)
+                                }
+                                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-lg"
+                            />
+                            <p className="text-gray-500 text-sm mt-1">
+                                Các tags giúp phân loại bài viết và dễ dàng tìm
+                                kiếm hơn
+                            </p>
+
+                            {/* Preview tags */}
+                            {renderTagsPreview()}
+                        </div>
+
                         {/* Markdown Content */}
                         <div>
                             <label className="block text-lg font-semibold text-gray-700 mb-2">
@@ -489,6 +548,10 @@ const BlogNew: React.FC = () => {
                             </li>
                             <li>
                                 • Sử dụng Markdown để định dạng nội dung đẹp mắt
+                            </li>
+                            <li>
+                                • Thêm các tags phù hợp để tăng khả năng tìm
+                                kiếm
                             </li>
                             <li>
                                 • Thêm địa điểm cụ thể để tăng tính địa phương
