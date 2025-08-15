@@ -342,7 +342,6 @@ export default function CreateTour() {
 
     const handleUpdateTour = async (values: any) => {
         try {
-            
             setLoading(true);
 
             const formData = new FormData();
@@ -406,8 +405,8 @@ export default function CreateTour() {
     };
 
     const onFinish = async (values: any) => {
-        console.log("lot khong?")
-        
+        console.log("lot khong?");
+
         if (id) {
             handleUpdateTour(values);
         } else {
@@ -560,16 +559,16 @@ export default function CreateTour() {
                         <Select placeholder="Chọn thời lượng">
                             <Select.Option value="1 ngày">1 ngày</Select.Option>
                             <Select.Option value="2 ngày 1 đêm">
-                                2 ngày 1 đêm
+                                2 ngày
                             </Select.Option>
                             <Select.Option value="3 ngày 2 đêm">
-                                3 ngày 2 đêm
+                                3 ngày
                             </Select.Option>
                             <Select.Option value="4 ngày 3 đêm">
-                                4 ngày 3 đêm
+                                4 ngày
                             </Select.Option>
                             <Select.Option value="5 ngày 4 đêm">
-                                5 ngày 4 đêm
+                                5 ngày
                             </Select.Option>
                         </Select>
                     </Form.Item>
