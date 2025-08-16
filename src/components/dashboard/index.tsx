@@ -1,18 +1,17 @@
-import { useLocation, useNavigate } from "react-router-dom";
 import { FaChartPie, FaGift, FaRegEnvelopeOpen, FaUser } from "react-icons/fa";
-import { MdTour } from "react-icons/md";
 import { FaLocationDot, FaRegComments } from "react-icons/fa6";
-import { MdSecurity } from "react-icons/md";
+import { MdSecurity, MdTour } from "react-icons/md";
+import { useLocation, useNavigate } from "react-router-dom";
 // import { IoSettings } from "react-icons/io5";
-import { VscExtensions } from "react-icons/vsc";
 import type { MenuProps } from "antd";
-import { BiSolidPhotoAlbum } from "react-icons/bi";
 import { Menu } from "antd";
+import { BiSolidPhotoAlbum } from "react-icons/bi";
+import { VscExtensions } from "react-icons/vsc";
 // import { PiFlagBannerFill } from "react-icons/pi";
-import { useEffect } from "react";
-import { useSelector, useDispatch } from "react-redux";
-import type { RootState, AppDispatch } from "@/store";
+import type { AppDispatch, RootState } from "@/store";
 import { setTitle } from "@/store/pageSlice";
+import { useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
 
 type MenuItem = Required<MenuProps>["items"][number];
 
@@ -43,6 +42,7 @@ const items: MenuItem[] = [
             { key: "/tours/category", label: "Danh mục Tours" },
             { key: "/tours", label: "Tất cả Tours" },
             { key: "/tours/book", label: "Đặt Tour" },
+            { key: "/tours/bonnus", label: "Khuyến mãi" },
         ],
     },
 

@@ -1,37 +1,38 @@
-import { Routes, Route } from "react-router-dom";
-import { useEffect } from "react";
-import { useDispatch } from "react-redux";
 import type { AppDispatch } from "@/store";
 import { fetchUser } from "@/store/authSlice";
+import { useEffect } from "react";
+import { useDispatch } from "react-redux";
+import { Route, Routes } from "react-router-dom";
 
-import MainLayout from "@layouts/main-layout";
-import NotFound from "@pages/not-found";
-import HomePage from "@pages/home";
-import Profile from "@pages/profile";
-import { Employee, Customer, CreateUser, UpdateUser } from "@pages/users";
-import { Tours, TourCategory, CreateTour } from "@pages/tours";
-import {
-    Destinations,
-    DestinationCategory,
-    CreateDestination,
-    UpdateDestination,
-} from "@pages/destinations";
+import ProtectedRoute from "@/contexts/ProtectedRoute";
+import AlbumImages from "@/pages/albums/albumImages";
+import Albums from "@/pages/albums/albums";
+import LoginPage from "@/pages/auth/login";
+import Authorization from "@/pages/authorization";
+import Blogs from "@/pages/Blog";
+import BlogNew from "@/pages/Blog/BlogNew";
+import Review from "@/pages/Review";
 import {
     BusRoutesPage,
     GuidesPage,
     HotelsPage,
     MotorbikesPage,
 } from "@/pages/service";
-import LoginPage from "@/pages/auth/login";
-import Authorization from "@/pages/authorization";
-import ProtectedRoute from "@/contexts/ProtectedRoute";
-import ProtectedRouteRole from "./ProtectedRoute";
-import Albums from "@/pages/albums/albums";
-import AlbumImages from "@/pages/albums/albumImages";
+import Bonnus from "@/pages/tours/Bonnus";
 import Booking from "@/pages/tours/Booking";
-import Review from "@/pages/Review";
-import Blogs from "@/pages/Blog";
-import BlogNew from "@/pages/Blog/BlogNew";
+import MainLayout from "@layouts/main-layout";
+import {
+    CreateDestination,
+    DestinationCategory,
+    Destinations,
+    UpdateDestination,
+} from "@pages/destinations";
+import HomePage from "@pages/home";
+import NotFound from "@pages/not-found";
+import Profile from "@pages/profile";
+import { CreateTour, TourCategory, Tours } from "@pages/tours";
+import { CreateUser, Customer, Employee, UpdateUser } from "@pages/users";
+import ProtectedRouteRole from "./ProtectedRoute";
 
 export default function AppRoutes() {
     const dispatch = useDispatch<AppDispatch>();
@@ -78,6 +79,7 @@ export default function AppRoutes() {
                 <Route path="tours" element={<Tours />} />
                 <Route path="tours/category" element={<TourCategory />} />
                 <Route path="tours/book" element={<Booking />} />
+                <Route path="tours/bonnus" element={<Bonnus />} />
                 <Route path="tour/create" element={<CreateTour />} />
                 <Route path="tour/edit/:id" element={<CreateTour />} />
                 {/* === DESTINATIONS === */}
