@@ -141,83 +141,6 @@ const notifyColumns: TableProps<NottifyDataType>["columns"] = [
     },
 ];
 
-const PromotionColumns: TableProps<PromotionDataType>["columns"] = [
-    {
-        title: "STT",
-        dataIndex: "id",
-        key: "id",
-        render: (text, _, index) => index + 1,
-    },
-    {
-        title: "CODE",
-        dataIndex: "code",
-        key: "code",
-    },
-    {
-        title: "Discount",
-        dataIndex: "discount",
-        key: "discount",
-    },
-    {
-        title: "Số lượng tối đa",
-        dataIndex: "max_uses",
-        key: "max_uses",
-    },
-    {
-        title: "Đã sử dụng",
-        dataIndex: "used_count",
-        key: "used_count",
-    },
-    {
-        title: "Từ ngày",
-        dataIndex: "valid_from",
-        key: "valid_from",
-    },
-    {
-        title: "Đến ngày",
-        dataIndex: "valid_to",
-        key: "valid_to",
-    },
-    {
-        title: "Trạng thái",
-        key: "status",
-        dataIndex: "status",
-        render: (status) => {
-            let color = "default";
-            if (status === "Active") color = "success";
-            if (status === "Expired") color = "warning";
-            if (status === "Exhausted") color = "error";
-            if (status === "Upcoming") color = "success";
-            return <Tag color={color}>{status.toUpperCase()}</Tag>;
-        },
-    },
-    {
-        title: "Hành động",
-        key: "action",
-        render: (_) => (
-            <Dropdown menu={{ items }} trigger={["click"]}>
-                <a onClick={(e) => e.preventDefault()} className="w-full block">
-                    <Space>
-                        <div className="w-full flex justify-center px-5">
-                            <BsThreeDots />
-                        </div>
-                    </Space>
-                </a>
-            </Dropdown>
-        ),
-    },
-];
-
-const COLORS = [
-    "#007BFF",
-    "#DC3545",
-    "#28A745",
-    "#FFC107",
-    "#6F42C1",
-    "#FD7E14",
-    "#6C757D",
-];
-
 // Main component
 export default function HomePage() {
     const { notifySuccess, notifyError, contextHolder } = useNotifier();
@@ -252,7 +175,6 @@ export default function HomePage() {
                 bookingTrendRes,
                 bookingByTypeRes,
                 recentActivitiesRes,
-                activePromotionsRes,
                 combinedDataRes,
             ] = await Promise.all([
                 axios.get("/dashboard/metrics"),
@@ -260,7 +182,6 @@ export default function HomePage() {
                 axios.get("/dashboard/booking-trend"),
                 axios.get("/dashboard/booking-by-type"),
                 axios.get("/dashboard/recent-activities"),
-                axios.get("/dashboard/promotions"),
                 axios.get("/dashboard/combined-data"),
             ]);
 
@@ -308,10 +229,6 @@ export default function HomePage() {
                 ? recentActivitiesRes.data
                 : recentActivitiesRes.data.data || [];
 
-            const activePromotionsData = Array.isArray(activePromotionsRes.data)
-                ? activePromotionsRes.data
-                : activePromotionsRes.data.data || [];
-
             const combinedChartData = Array.isArray(combinedDataRes.data)
                 ? combinedDataRes.data
                 : combinedDataRes.data.data || [];
@@ -321,7 +238,6 @@ export default function HomePage() {
             setBookingTrend(bookingTrendData);
             setBookingByType(bookingByTypeData);
             setRecentActivities(recentActivitiesData);
-            setActivePromotions(activePromotionsData);
             setCombinedData(combinedChartData);
         } catch (err: any) {
             console.error("Error fetching dashboard data:", err);
@@ -518,6 +434,16 @@ export default function HomePage() {
             </div>
         );
     }
+
+    const COLORS = [
+        "#007BFF",
+        "#DC3545",
+        "#28A745",
+        "#FFC107",
+        "#6F42C1",
+        "#FD7E14",
+        "#6C757D",
+    ];
 
     return (
         <>
@@ -796,20 +722,6 @@ export default function HomePage() {
             </section>
 
             <div className={`${styles.spacing}`}></div>
-
-            <section className="bg-[#fff] rounded-[8px]">
-                <div className="py-3">
-                    <span className={`${styles.subTitle} `}>
-                        Danh sách khuyến mãi
-                    </span>
-                </div>
-                <Table<PromotionDataType>
-                    columns={PromotionColumns}
-                    dataSource={activePromotions}
-                    pagination={{ pageSize: 5 }}
-                    rowKey="code"
-                />
-            </section>
 
             <div className={`${styles.spacing}`}></div>
 
