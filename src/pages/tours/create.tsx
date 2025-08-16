@@ -165,10 +165,13 @@ export default function CreateTour() {
                     ? Number(tour.discount_price)
                     : undefined,
                 destination: tour.destination,
-                destination_ids: tour.destination_ids,
                 duration: tour.duration,
                 status: tour.status,
                 schedules: schedulesData,
+                destination_ids:
+                    ((tour as any)?.destinations as any)?.map(
+                        (item: any) => item?.destination_id
+                    ) || [],
             };
 
             form.setFieldsValue(formValues);
@@ -743,7 +746,7 @@ export default function CreateTour() {
                         </Select>
                     </Form.Item>
 
-                    <Form.Item label="Hướng dẫn viên" name="guide_id">
+                    {/* <Form.Item label="Hướng dẫn viên" name="guide_id">
                         <Select allowClear placeholder="Chọn hướng dẫn viên">
                             {guides.map((g) => (
                                 <Select.Option
@@ -767,7 +770,7 @@ export default function CreateTour() {
                                 </Select.Option>
                             ))}
                         </Select>
-                    </Form.Item>
+                    </Form.Item> */}
 
                     <div>
                         <h3 className="text-lg font-semibold mb-4">
