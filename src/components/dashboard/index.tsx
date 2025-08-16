@@ -87,6 +87,15 @@ const items: MenuItem[] = [
         //     { key: "/combos/add", label: "Tạo combo mới" },
         // ],
     },
+    {
+        key: "/contact",
+        label: "Liên hệ",
+        icon: <VscExtensions />,
+        // children: [
+        //     { key: "/combos", label: "Danh sách combo" },
+        //     { key: "/combos/add", label: "Tạo combo mới" },
+        // ],
+    },
 
     // {
     //     key: "booking",

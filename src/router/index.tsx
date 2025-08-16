@@ -11,6 +11,7 @@ import LoginPage from "@/pages/auth/login";
 import Authorization from "@/pages/authorization";
 import Blogs from "@/pages/Blog";
 import BlogNew from "@/pages/Blog/BlogNew";
+import ContactsPage from "@/pages/Contact";
 import Review from "@/pages/Review";
 import {
     BusRoutesPage,
@@ -109,6 +110,7 @@ export default function AppRoutes() {
                 <Route path="reviews" element={<Review />} />
                 {/* Blogs */}
                 <Route path="blogs" element={<Blogs />} />
+                <Route path="contact" element={<ContactsPage />} />
                 <Route path="blogs/new" element={<BlogNew />} />
                 <Route path="blogs/edit/:id" element={<BlogNew />} />
             </Route>
