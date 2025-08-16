@@ -1,4 +1,4 @@
-import { FaChartPie, FaGift, FaRegEnvelopeOpen, FaUser } from "react-icons/fa";
+import { FaChartPie, FaGift, FaUser } from "react-icons/fa";
 import { FaLocationDot, FaRegComments } from "react-icons/fa6";
 import { MdSecurity, MdTour } from "react-icons/md";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -88,15 +88,15 @@ const items: MenuItem[] = [
         // ],
     },
 
-    {
-        key: "booking",
-        label: "Quản lý đặt chỗ",
-        icon: <FaRegEnvelopeOpen />,
-        children: [
-            { key: "/bookings", label: "Tất cả đặt chỗ" },
-            { key: "/custom-tours", label: "Tour linh hoạt" },
-        ],
-    },
+    // {
+    //     key: "booking",
+    //     label: "Quản lý đặt chỗ",
+    //     icon: <FaRegEnvelopeOpen />,
+    //     children: [
+    //         { key: "/bookings", label: "Tất cả đặt chỗ" },
+    //         { key: "/custom-tours", label: "Tour linh hoạt" },
+    //     ],
+    // },
 
     {
         key: "review",
@@ -104,7 +104,7 @@ const items: MenuItem[] = [
         icon: <FaRegComments />,
         children: [
             { key: "/reviews", label: "Đánh giá tour" },
-            { key: "/feedbacks", label: "Phản hồi người dùng" },
+            // { key: "/feedbacks", label: "Phản hồi người dùng" },
         ],
     },
 
