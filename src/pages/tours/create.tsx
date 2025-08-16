@@ -1,25 +1,25 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useEffect, useState, useCallback } from "react";
+import { useNotifier } from "@/hooks/useNotifier";
+import { API } from "@/lib/axios";
+import { PlusOutlined } from "@ant-design/icons";
 import {
+    Button,
+    Card,
     Form,
     Input,
-    Button,
-    Select,
-    Upload,
-    message,
-    Space,
     InputNumber,
+    message,
+    Modal,
+    Select,
+    Space,
     Spin,
-    Card,
+    Upload,
 } from "antd";
-import { PlusOutlined } from "@ant-design/icons";
-import type { UploadFile, RcFile } from "antd/es/upload/interface";
-import { API } from "@/lib/axios";
-import { useNotifier } from "@/hooks/useNotifier";
-import { useNavigate, useParams } from "react-router-dom";
-import { Modal } from "antd";
+import type { RcFile, UploadFile } from "antd/es/upload/interface";
+import { useCallback, useEffect, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import MdEditor from "react-markdown-editor-lite";
+import { useNavigate, useParams } from "react-router-dom";
 
 interface TourCategoryType {
     category_id: number;
@@ -523,7 +523,7 @@ export default function CreateTour() {
                 console.log(key, value);
             }
 
-            await API.put(`/tours/${id}?_method=PUT`, formData, {
+            await API.post(`/tours/${id}?_method=PUT`, formData, {
                 headers: { "Content-Type": "multipart/form-data" },
             });
 
@@ -539,11 +539,6 @@ export default function CreateTour() {
     };
 
     const onFinish = async (values: any) => {
-        console.log("Form values:", values);
-        console.log("Selected duration:", selectedDuration);
-        console.log("Image file list:", imageFileList);
-        console.log("Album file list:", albumFileList);
-
         if (id) {
             handleUpdateTour(values);
         } else {
@@ -563,7 +558,9 @@ export default function CreateTour() {
         <>
             {contextHolder}
             <div className="mx-auto p-8 bg-white rounded-[8px] shadow">
-                <h1 className="text-2xl font-bold mb-6">Tạo Tour Mới</h1>
+                <h1 className="text-2xl font-bold mb-6">
+                    {id ? "Cập nhật Tour" : "Tạo Tour Mới"}
+                </h1>
 
                 <Form
                     form={form}
