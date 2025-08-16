@@ -32,7 +32,7 @@ const { Option } = Select;
 const { TextArea } = Input;
 
 interface Promotion {
-    promotion_id: number;
+    id: number;
     code: string;
     discount_type: "percentage" | "fixed";
     discount_value: number;
@@ -52,7 +52,7 @@ interface PromotionPagination {
 }
 
 const defaultPromotion: Promotion = {
-    promotion_id: 0,
+    id: 0,
     code: "",
     discount_type: "percentage",
     discount_value: 0,
@@ -174,7 +174,7 @@ export default function Bonnus() {
                     if (response.data.success) {
                         setPromotions(
                             promotions.filter(
-                                (promo) => promo.promotion_id !== id
+                                (promo) => promo.id !== id
                             )
                         );
                         message.success(
@@ -204,7 +204,7 @@ export default function Bonnus() {
             if (response.data.success) {
                 setPromotions(
                     promotions.map((promo) =>
-                        promo.promotion_id === id
+                        promo.id === id
                             ? { ...promo, is_active: !currentStatus }
                             : promo
                     )
@@ -237,11 +237,13 @@ export default function Bonnus() {
             max_uses: values.max_uses || null,
         };
 
+        console.log("check currentPromotion: ", currentPromotion);
+
         try {
             let response;
             if (isEditing) {
                 response = await axios.put(
-                    `${API_URL}/promotions/${currentPromotion.promotion_id}`,
+                    `${API_URL}/promotions/${currentPromotion.id}`,
                     promotionData
                 );
             } else {
@@ -255,7 +257,7 @@ export default function Bonnus() {
                 if (isEditing) {
                     setPromotions(
                         promotions.map((promo) =>
-                            promo.promotion_id === currentPromotion.promotion_id
+                            promo.id === currentPromotion.id
                                 ? response.data.data
                                 : promo
                         )
@@ -396,16 +398,6 @@ export default function Bonnus() {
             render: (date: string) => dayjs(date).format("DD/MM/YYYY"),
         },
         {
-            title: "Lượt sử dụng",
-            key: "uses",
-            render: (_, record: Promotion) => (
-                <span>
-                    {record.current_uses}
-                    {record.max_uses !== null && ` / ${record.max_uses}`}
-                </span>
-            ),
-        },
-        {
             title: "Trạng thái",
             key: "status",
             render: (_, record: Promotion) => getStatusTag(record),
@@ -418,7 +410,7 @@ export default function Bonnus() {
                     checked={record.is_active}
                     onChange={() =>
                         handleToggleStatus(
-                            record.promotion_id,
+                            record.id,
                             record.is_active
                         )
                     }
@@ -442,7 +434,7 @@ export default function Bonnus() {
                         danger
                         icon={<DeleteOutlined />}
                         size="small"
-                        onClick={() => handleDelete(record.promotion_id)}
+                        onClick={() => handleDelete(record.id)}
                     /> */}
                 </Space>
             ),
@@ -514,7 +506,7 @@ export default function Bonnus() {
             <Table
                 columns={columns}
                 dataSource={promotions}
-                rowKey="promotion_id" // Sửa thành promotion_id để phù hợp với cấu trúc dữ liệu
+                rowKey="id" // Sửa thành id để phù hợp với cấu trúc dữ liệu
                 loading={loading}
                 pagination={{
                     current: pagination.current_page,
@@ -646,18 +638,6 @@ export default function Bonnus() {
                                             .replace(/\$\s?|(,*)/g, "")
                                             .replace("%", "")
                                     }
-                                />
-                            </Form.Item>
-                        </Col>
-                        <Col span={12}>
-                            <Form.Item
-                                name="max_uses"
-                                label="Số lượt sử dụng tối đa (để trống nếu không giới hạn)"
-                            >
-                                <InputNumber
-                                    className="w-full"
-                                    placeholder="Nhập số lượt sử dụng tối đa"
-                                    min={1}
                                 />
                             </Form.Item>
                         </Col>
