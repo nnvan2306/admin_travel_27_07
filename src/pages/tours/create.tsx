@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable @typescript-eslint/no-unused-vars */
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import {
     Form,
     Input,
@@ -11,6 +10,7 @@ import {
     Space,
     InputNumber,
     Spin,
+    Card,
 } from "antd";
 import { PlusOutlined } from "@ant-design/icons";
 import type { UploadFile, RcFile } from "antd/es/upload/interface";
@@ -74,42 +74,107 @@ interface TourType {
 export default function CreateTour() {
     const { id } = useParams<{ id: string }>();
     const [loadingData, setLoadingData] = useState(true);
+    const [dataLoaded, setDataLoaded] = useState(false);
     const [form] = Form.useForm();
     const [loading, setLoading] = useState(false);
     const [categories, setCategories] = useState<TourCategoryType[]>([]);
     const [destinations, setDestinations] = useState<DestinationType[]>([]);
     const [imageFileList, setImageFileList] = useState<UploadFile[]>([]);
     const [albumFileList, setAlbumFileList] = useState<UploadFile[]>([]);
+    const [selectedDuration, setSelectedDuration] = useState<string>("");
     // const
     const { contextHolder, notifySuccess, notifyError } = useNotifier();
     const [guides, setGuides] = useState<GuideType[]>([]);
     const [busRoutes, setBusRoutes] = useState<BusRouteType[]>([]);
 
+    // Function để tạo số lượng form dựa trên thời lượng
+    const getScheduleCount = (duration: string): number => {
+        if (duration === "1 ngày") return 1;
+        if (duration === "2 ngày 1 đêm") return 2;
+        if (duration === "3 ngày 2 đêm") return 3;
+        if (duration === "4 ngày 3 đêm") return 4;
+        if (duration === "5 ngày 4 đêm") return 5;
+        return 0;
+    };
+
+    // Function để cập nhật schedules khi thời lượng thay đổi
+    const handleDurationChange = useCallback(
+        (duration: string) => {
+            setSelectedDuration(duration);
+            const scheduleCount = getScheduleCount(duration);
+
+            // Lấy schedules hiện tại từ form
+            const currentSchedules = form.getFieldValue("schedules") || [];
+
+            // Tạo mảng schedules mới với số lượng phù hợp
+            const newSchedules = Array.from(
+                { length: scheduleCount },
+                (_, index) => {
+                    // Giữ lại dữ liệu cũ nếu có, nếu không thì tạo mới
+                    const existingSchedule = currentSchedules[index];
+                    return (
+                        existingSchedule || {
+                            day: index + 1,
+                            title: "",
+                            activity_description: "",
+                        }
+                    );
+                }
+            );
+
+            form.setFieldsValue({ schedules: newSchedules });
+
+            // Force re-render form fields
+            form.resetFields(["schedules"]);
+            setTimeout(() => {
+                form.setFieldsValue({ schedules: newSchedules });
+            }, 0);
+        },
+        [form]
+    );
+
     const navigate = useNavigate();
 
-    const fetchTour = async () => {
+    const fetchTour = useCallback(async () => {
         if (!id) return;
         try {
+            setLoadingData(true);
             const res = await API.get(`/tours/${id}`);
             const tour: TourType = res?.data;
 
-            // Gán dữ liệu vào form
-            form.setFieldsValue({
+            // Set selectedDuration từ dữ liệu tour để hiển thị form schedules
+            if (tour.duration) {
+                setSelectedDuration(tour.duration);
+            }
+
+            // Prepare schedules data
+            const schedulesData = (tour?.schedules || []).map((schedule) => ({
+                day: schedule.day,
+                title: schedule.title || "",
+                activity_description: schedule.activity_description || "",
+            }));
+
+            // Set form values
+            const formValues = {
                 category_id: tour.category_id,
                 tour_name: tour.tour_name,
-                description: tour.description,
-                itinerary: tour.itinerary,
+                description: tour.description || "",
+                itinerary: tour.itinerary || "",
                 price: Number(tour.price),
-                discount_price: Number(tour.discount_price),
+                discount_price: tour.discount_price
+                    ? Number(tour.discount_price)
+                    : undefined,
                 destination: tour.destination,
                 destination_ids: tour.destination_ids,
                 duration: tour.duration,
                 status: tour.status,
-                schedules: (tour?.schedules || []).map((i) => ({
-                    ...i,
-                    activity_description: i.activity_description || "",
-                })),
-            });
+                schedules: schedulesData,
+            };
+
+            form.setFieldsValue(formValues);
+
+            // Set dataLoaded to true after form values are set
+            setDataLoaded(true);
 
             // Ảnh đại diện nếu có => đưa vào fileList để hiển thị preview
             if (tour.image) {
@@ -138,21 +203,28 @@ export default function CreateTour() {
                 );
                 setAlbumFileList(albumFiles);
             }
-        } catch {
-            notifyError("Không tải được dữ liệu tour");
+        } catch (error) {
+            console.error("Không tải được dữ liệu tour", error);
         } finally {
             setLoadingData(false);
+            if (!id) {
+                setDataLoaded(true); // For create mode
+            }
         }
-    };
+    }, [id, form]);
 
     useEffect(() => {
         if (id) {
             fetchTour();
+        } else {
+            // Nếu không có id (tạo mới), không cần loading
+            setLoadingData(false);
+            setDataLoaded(true);
         }
-    }, [id]);
+    }, [id, fetchTour]);
 
     // Fetch danh mục tour
-    const fetchCategories = async () => {
+    const fetchCategories = useCallback(async () => {
         try {
             const res = await API.get("/tour-categories");
             setCategories(
@@ -161,12 +233,12 @@ export default function CreateTour() {
                 )
             );
         } catch (error) {
-            notifyError("Không tải được danh mục tour");
+            console.error("Không tải được danh mục tour", error);
         }
-    };
+    }, []);
 
     // Fetch điểm đến
-    const fetchDestinations = async () => {
+    const fetchDestinations = useCallback(async () => {
         try {
             const res = await API.get("/destinations");
             setDestinations(
@@ -175,41 +247,40 @@ export default function CreateTour() {
                 )
             );
         } catch (error) {
-            notifyError("Không tải được danh sách điểm đến");
+            console.error("Không tải được danh sách điểm đến", error);
         }
-    };
+    }, []);
 
     // Fetch hướng dẫn viên
-    const fetchGuides = async () => {
+    const fetchGuides = useCallback(async () => {
         try {
             const res = await API.get("/guides");
             setGuides(
                 res.data.filter((g: GuideType) => g.is_deleted === "active")
             );
         } catch (error) {
-            notifyError("Không tải được danh sách hướng dẫn viên");
+            console.error("Không tải được danh sách hướng dẫn viên", error);
         }
-    };
+    }, []);
 
     // Fetch tuyến xe buýt
-    const fetchBusRoutes = async () => {
+    const fetchBusRoutes = useCallback(async () => {
         try {
             const res = await API.get("/bus-routes");
             setBusRoutes(
                 res.data.filter((r: BusRouteType) => r.is_deleted === "active")
             );
         } catch (error) {
-            console.log(error);
-            notifyError("Không tải được các tuyến xe buýt");
+            console.error("Không tải được các tuyến xe buýt", error);
         }
-    };
+    }, []);
 
     useEffect(() => {
         fetchCategories();
         fetchDestinations();
         fetchGuides();
         fetchBusRoutes();
-    }, []);
+    }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
     const beforeUploadImage = (file: RcFile) => {
         const isImage = file.type.startsWith("image/");
@@ -295,32 +366,49 @@ export default function CreateTour() {
 
             // Lịch trình
             if (values.schedules && Array.isArray(values.schedules)) {
-                values.schedules.forEach(
-                    (schedule: TourSchedule, index: number) => {
-                        Object.entries(schedule).forEach(([key, value]) => {
-                            if (value !== undefined && value !== null) {
-                                // Format thời gian thành H:i
-                                if (
-                                    key === "start_time" ||
-                                    key === "end_time"
-                                ) {
-                                    const time = new Date(
-                                        `1970-01-01T${value}`
-                                    );
-                                    value = time.toLocaleTimeString("en-GB", {
-                                        hour: "2-digit",
-                                        minute: "2-digit",
-                                        hour12: false,
-                                    });
-                                }
-                                formData.append(
-                                    `schedules[${index}][${key}]`,
-                                    String(value)
-                                );
-                            }
+                console.log(
+                    "Processing schedules for create:",
+                    values.schedules
+                );
+                values.schedules.forEach((schedule: any, index: number) => {
+                    // Chỉ gửi schedules có dữ liệu
+                    if (schedule && schedule.title && schedule.title.trim()) {
+                        const dayNumber = schedule.day || index + 1;
+
+                        formData.append(
+                            `schedules[${index}][day]`,
+                            dayNumber.toString()
+                        );
+
+                        formData.append(
+                            `schedules[${index}][title]`,
+                            schedule.title.trim()
+                        );
+
+                        if (
+                            schedule.activity_description &&
+                            schedule.activity_description.trim()
+                        ) {
+                            formData.append(
+                                `schedules[${index}][activity_description]`,
+                                schedule.activity_description.trim()
+                            );
+                        }
+
+                        console.log(`Create Schedule ${index}:`, {
+                            day: dayNumber,
+                            title: schedule.title.trim(),
+                            activity_description:
+                                schedule.activity_description?.trim() || "",
                         });
                     }
-                );
+                });
+            }
+
+            // Debug FormData
+            console.log("FormData contents:");
+            for (const [key, value] of formData.entries()) {
+                console.log(key, value);
             }
 
             const res = await API.post("/tours", formData, {
@@ -332,7 +420,6 @@ export default function CreateTour() {
             setImageFileList([]);
             setAlbumFileList([]);
             navigate("/tours");
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (error: any) {
             notifyError(error?.response?.data?.message || "Tạo tour thất bại");
         } finally {
@@ -389,6 +476,53 @@ export default function CreateTour() {
                 });
             }
 
+            // Lịch trình
+            if (values.schedules && Array.isArray(values.schedules)) {
+                console.log(
+                    "Processing schedules for update:",
+                    values.schedules
+                );
+                values.schedules.forEach((schedule: any, index: number) => {
+                    // Chỉ gửi schedules có dữ liệu
+                    if (schedule && schedule.title && schedule.title.trim()) {
+                        const dayNumber = schedule.day || index + 1;
+
+                        formData.append(
+                            `schedules[${index}][day]`,
+                            dayNumber.toString()
+                        );
+
+                        formData.append(
+                            `schedules[${index}][title]`,
+                            schedule.title.trim()
+                        );
+
+                        if (
+                            schedule.activity_description &&
+                            schedule.activity_description.trim()
+                        ) {
+                            formData.append(
+                                `schedules[${index}][activity_description]`,
+                                schedule.activity_description.trim()
+                            );
+                        }
+
+                        console.log(`Update Schedule ${index}:`, {
+                            day: dayNumber,
+                            title: schedule.title.trim(),
+                            activity_description:
+                                schedule.activity_description?.trim() || "",
+                        });
+                    }
+                });
+            }
+
+            // Debug FormData
+            console.log("Update FormData contents:");
+            for (const [key, value] of formData.entries()) {
+                console.log(key, value);
+            }
+
             await API.put(`/tours/${id}?_method=PUT`, formData, {
                 headers: { "Content-Type": "multipart/form-data" },
             });
@@ -405,7 +539,10 @@ export default function CreateTour() {
     };
 
     const onFinish = async (values: any) => {
-        console.log("lot khong?");
+        console.log("Form values:", values);
+        console.log("Selected duration:", selectedDuration);
+        console.log("Image file list:", imageFileList);
+        console.log("Album file list:", albumFileList);
 
         if (id) {
             handleUpdateTour(values);
@@ -479,29 +616,35 @@ export default function CreateTour() {
 
                     <Form.Item label="Mô tả" name="description">
                         {/* <TextArea rows={3} placeholder="Mô tả tour" /> */}
-                        <MdEditor
-                            style={{ height: "300px" }}
-                            value={form.getFieldValue("description") || ""}
-                            renderHTML={(text) => (
-                                <ReactMarkdown>{text}</ReactMarkdown>
-                            )}
-                            onChange={({ text }) =>
-                                form.setFieldsValue({ description: text })
-                            }
-                        />
+                        {dataLoaded && (
+                            <MdEditor
+                                key={`description-${id || "new"}-${dataLoaded}`}
+                                style={{ height: "300px" }}
+                                value={form.getFieldValue("description") || ""}
+                                renderHTML={(text) => (
+                                    <ReactMarkdown>{text}</ReactMarkdown>
+                                )}
+                                onChange={({ text }) =>
+                                    form.setFieldsValue({ description: text })
+                                }
+                            />
+                        )}
                     </Form.Item>
 
                     <Form.Item label="Hành trình" name="itinerary">
-                        <MdEditor
-                            style={{ height: "300px" }}
-                            value={form.getFieldValue("itinerary") || ""}
-                            renderHTML={(text) => (
-                                <ReactMarkdown>{text}</ReactMarkdown>
-                            )}
-                            onChange={({ text }) =>
-                                form.setFieldsValue({ itinerary: text })
-                            }
-                        />
+                        {dataLoaded && (
+                            <MdEditor
+                                key={`itinerary-${id || "new"}-${dataLoaded}`}
+                                style={{ height: "300px" }}
+                                value={form.getFieldValue("itinerary") || ""}
+                                renderHTML={(text) => (
+                                    <ReactMarkdown>{text}</ReactMarkdown>
+                                )}
+                                onChange={({ text }) =>
+                                    form.setFieldsValue({ itinerary: text })
+                                }
+                            />
+                        )}
                     </Form.Item>
 
                     <Form.Item
@@ -556,7 +699,10 @@ export default function CreateTour() {
                             },
                         ]}
                     >
-                        <Select placeholder="Chọn thời lượng">
+                        <Select
+                            placeholder="Chọn thời lượng"
+                            onChange={handleDurationChange}
+                        >
                             <Select.Option value="1 ngày">1 ngày</Select.Option>
                             <Select.Option value="2 ngày 1 đêm">
                                 2 ngày
@@ -626,234 +772,145 @@ export default function CreateTour() {
                         </Select>
                     </Form.Item>
 
-                    <Form.List name="schedules" initialValue={[{}]}>
-                        {(fields, { add, remove }) => (
-                            <>
-                                <h3 className="text-lg font-semibold">
-                                    Lịch trình tour
-                                </h3>
-                                {fields.map(({ key, name, ...restField }) => (
-                                    <Space
-                                        key={key}
-                                        direction="vertical"
-                                        style={{
-                                            display: "flex",
-                                            marginBottom: 8,
-                                        }}
-                                        size="middle"
-                                    >
-                                        <Form.Item
-                                            {...restField}
-                                            name={[name, "day"]}
-                                            label="Ngày"
-                                            rules={[
-                                                {
-                                                    required: true,
-                                                    message:
-                                                        "Vui lòng nhập ngày",
-                                                },
-                                                {
-                                                    type: "number",
-                                                    min: 1,
-                                                    message:
-                                                        "Ngày phải lớn hơn 0",
-                                                },
-                                                ({ getFieldValue }) => ({
-                                                    validator(_, value) {
-                                                        const days =
-                                                            getFieldValue(
-                                                                "schedules"
-                                                            ).map(
-                                                                (
-                                                                    s: TourSchedule
-                                                                ) => s.day
-                                                            );
-                                                        if (
-                                                            days.filter(
-                                                                (d: number) =>
-                                                                    d === value
-                                                            ).length > 1
-                                                        ) {
-                                                            return Promise.reject(
-                                                                "Ngày không được trùng lặp"
-                                                            );
-                                                        }
-                                                        return Promise.resolve();
+                    <div>
+                        <h3 className="text-lg font-semibold mb-4">
+                            Lịch trình tour
+                        </h3>
+                        {selectedDuration && (
+                            <div>
+                                {Array.from(
+                                    {
+                                        length: getScheduleCount(
+                                            selectedDuration
+                                        ),
+                                    },
+                                    (_, index) => (
+                                        <Card
+                                            key={index}
+                                            type="inner"
+                                            title={`Ngày ${index + 1}`}
+                                            style={{ marginBottom: 16 }}
+                                        >
+                                            <Form.Item
+                                                name={[
+                                                    "schedules",
+                                                    index,
+                                                    "title",
+                                                ]}
+                                                label="Tiêu đề"
+                                                rules={[
+                                                    {
+                                                        required: true,
+                                                        message:
+                                                            "Vui lòng nhập tiêu đề!",
                                                     },
-                                                }),
-                                            ]}
-                                        >
-                                            <InputNumber
-                                                type="number"
-                                                min={1}
-                                                placeholder="Nhập ngày"
-                                                style={{
-                                                    width: "100%",
-                                                }}
-                                            />
-                                        </Form.Item>
-                                        <Form.Item
-                                            {...restField}
-                                            name={[name, "start_time"]}
-                                            label="Giờ bắt đầu"
-                                            rules={[
-                                                {
-                                                    required: true,
-                                                    message:
-                                                        "Vui lòng nhập giờ bắt đầu",
-                                                },
-                                            ]}
-                                        >
-                                            <Input
-                                                type="time"
-                                                placeholder="Chọn giờ bắt đầu"
-                                            />
-                                        </Form.Item>
-                                        <Form.Item
-                                            {...restField}
-                                            name={[name, "end_time"]}
-                                            label="Giờ kết thúc"
-                                            rules={[
-                                                {
-                                                    required: true,
-                                                    message:
-                                                        "Vui lòng nhập giờ kết thúc",
-                                                },
-                                                ({ getFieldValue }) => ({
-                                                    validator(_, value) {
-                                                        const startTime =
-                                                            getFieldValue([
-                                                                "schedules",
-                                                                name,
-                                                                "start_time",
-                                                            ]);
-                                                        if (
-                                                            !startTime ||
-                                                            !value
-                                                        ) {
-                                                            return Promise.resolve();
-                                                        }
-                                                        if (
-                                                            value <= startTime
-                                                        ) {
-                                                            return Promise.reject(
-                                                                "Giờ kết thúc phải sau giờ bắt đầu"
-                                                            );
-                                                        }
-                                                        return Promise.resolve();
+                                                    {
+                                                        max: 255,
+                                                        message:
+                                                            "Tiêu đề không được vượt quá 255 ký tự",
                                                     },
-                                                }),
-                                            ]}
-                                        >
-                                            <Input
-                                                type="time"
-                                                placeholder="Chọn giờ kết thúc"
-                                            />
-                                        </Form.Item>
-                                        <Form.Item
-                                            {...restField}
-                                            name={[name, "title"]}
-                                            label="Tiêu đề hoạt động"
-                                            rules={[
-                                                {
-                                                    required: true,
-                                                    message:
-                                                        "Vui lòng nhập tiêu đề",
-                                                },
-                                                {
-                                                    max: 255,
-                                                    message:
-                                                        "Tiêu đề không được vượt quá 255 ký tự",
-                                                },
-                                            ]}
-                                        >
-                                            <Input placeholder="Nhập tiêu đề hoạt động" />
-                                        </Form.Item>
-                                        <Form.Item
-                                            {...restField}
-                                            name={[
-                                                name,
-                                                "activity_description",
-                                            ]}
-                                            label="Mô tả hoạt động"
-                                        >
-                                            <MdEditor
-                                                style={{ height: "300px" }}
-                                                renderHTML={(text) => (
-                                                    <ReactMarkdown>
-                                                        {text}
-                                                    </ReactMarkdown>
-                                                )}
-                                                value={
-                                                    form.getFieldValue([
-                                                        "schedules",
-                                                        name,
-                                                        "activity_description",
-                                                    ]) || ""
-                                                }
-                                                onChange={({ text }) => {
-                                                    const schedules =
-                                                        form.getFieldValue(
-                                                            "schedules"
-                                                        ) || [];
-                                                    const newSchedules =
-                                                        schedules.map(
-                                                            (
-                                                                item: any,
-                                                                idx: number
-                                                            ) =>
-                                                                idx === name
-                                                                    ? {
-                                                                          ...item,
-                                                                          activity_description:
-                                                                              text,
-                                                                      }
-                                                                    : item
-                                                        );
-                                                    form.setFieldsValue({
-                                                        schedules: newSchedules,
-                                                    });
-                                                }}
-                                            />
-                                        </Form.Item>
-                                        <Form.Item
-                                            {...restField}
-                                            name={[name, "destination_id"]}
-                                            label="Điểm đến"
-                                        >
-                                            <Select
-                                                allowClear
-                                                placeholder="Chọn điểm đến"
+                                                ]}
                                             >
-                                                {destinations.map((d) => (
-                                                    <Select.Option
-                                                        key={d.destination_id}
-                                                        value={d.destination_id}
-                                                    >
-                                                        {d.name}
-                                                    </Select.Option>
-                                                ))}
-                                            </Select>
-                                        </Form.Item>
-                                        <Button
-                                            danger
-                                            onClick={() => remove(name)}
-                                        >
-                                            Xoá lịch trình
-                                        </Button>
-                                    </Space>
-                                ))}
-                                <Form.Item>
-                                    <Button
-                                        onClick={() => add()}
-                                        icon={<PlusOutlined />}
-                                    >
-                                        Thêm lịch trình
-                                    </Button>
-                                </Form.Item>
-                            </>
+                                                <Input placeholder="Nhập tiêu đề cho ngày này" />
+                                            </Form.Item>
+
+                                            <Form.Item
+                                                name={[
+                                                    "schedules",
+                                                    index,
+                                                    "activity_description",
+                                                ]}
+                                                label="Mô tả"
+                                                rules={[
+                                                    {
+                                                        required: true,
+                                                        message:
+                                                            "Vui lòng nhập mô tả!",
+                                                    },
+                                                ]}
+                                            >
+                                                {dataLoaded && (
+                                                    <MdEditor
+                                                        key={`schedule-${index}-${
+                                                            id || "new"
+                                                        }-${selectedDuration}-${dataLoaded}`}
+                                                        style={{
+                                                            height: "300px",
+                                                        }}
+                                                        renderHTML={(text) => (
+                                                            <ReactMarkdown>
+                                                                {text}
+                                                            </ReactMarkdown>
+                                                        )}
+                                                        value={
+                                                            form.getFieldValue([
+                                                                "schedules",
+                                                                index,
+                                                                "activity_description",
+                                                            ]) || ""
+                                                        }
+                                                        onChange={({
+                                                            text,
+                                                        }) => {
+                                                            const currentSchedules =
+                                                                form.getFieldValue(
+                                                                    "schedules"
+                                                                ) || [];
+                                                            const newSchedules =
+                                                                [
+                                                                    ...currentSchedules,
+                                                                ];
+
+                                                            // Ensure the schedule object exists
+                                                            if (
+                                                                !newSchedules[
+                                                                    index
+                                                                ]
+                                                            ) {
+                                                                newSchedules[
+                                                                    index
+                                                                ] = {
+                                                                    day:
+                                                                        index +
+                                                                        1,
+                                                                    title: "",
+                                                                    activity_description:
+                                                                        "",
+                                                                };
+                                                            }
+
+                                                            newSchedules[
+                                                                index
+                                                            ] = {
+                                                                ...newSchedules[
+                                                                    index
+                                                                ],
+                                                                activity_description:
+                                                                    text,
+                                                            };
+
+                                                            form.setFieldsValue(
+                                                                {
+                                                                    schedules:
+                                                                        newSchedules,
+                                                                }
+                                                            );
+                                                        }}
+                                                    />
+                                                )}
+                                            </Form.Item>
+                                        </Card>
+                                    )
+                                )}
+                            </div>
                         )}
-                    </Form.List>
+                        {!selectedDuration && (
+                            <div className="text-gray-500 text-center py-8 border-2 border-dashed border-gray-300 rounded-lg">
+                                Vui lòng chọn thời lượng tour để hiển thị form
+                                lịch trình
+                            </div>
+                        )}
+                    </div>
 
                     <Form.Item
                         label="Trạng thái"
