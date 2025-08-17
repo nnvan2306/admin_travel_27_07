@@ -62,6 +62,7 @@ interface TourType {
     itinerary: string;
     price: number;
     discount_price: number | null;
+    min_people: number;
     destination: string;
     destination_ids: number[];
     duration: string;
@@ -164,6 +165,7 @@ export default function CreateTour() {
                 discount_price: tour.discount_price
                     ? Number(tour.discount_price)
                     : undefined,
+                min_people: tour.min_people || 2,
                 destination: tour.destination,
                 duration: tour.duration,
                 status: tour.status,
@@ -326,6 +328,10 @@ export default function CreateTour() {
             formData.append("description", values.description || "");
             formData.append("itinerary", values.itinerary || "");
             formData.append("price", values.price.toString());
+            formData.append(
+                "min_people",
+                values.min_people ? values.min_people.toString() : "2"
+            );
             if (
                 values.discount_price !== undefined &&
                 values.discount_price !== null &&
@@ -440,6 +446,10 @@ export default function CreateTour() {
             formData.append("description", values.description || "");
             formData.append("itinerary", values.itinerary || "");
             formData.append("price", values.price.toString());
+            formData.append(
+                "min_people",
+                values.min_people ? values.min_people.toString() : "2"
+            );
             formData.append(
                 "discount_price",
                 values.discount_price?.toString() || ""
@@ -685,6 +695,31 @@ export default function CreateTour() {
                             type="number"
                             min={0}
                             placeholder="Nhập giá giảm (nếu có)"
+                            style={{ width: "100%" }}
+                        />
+                    </Form.Item>
+
+                    <Form.Item
+                        label="Số người tối thiểu"
+                        name="min_people"
+                        rules={[
+                            {
+                                required: true,
+                                message: "Vui lòng nhập số người tối thiểu",
+                            },
+                            {
+                                type: "number",
+                                min: 1,
+                                max: 50,
+                                message: "Số người tối thiểu từ 1 đến 50",
+                            },
+                        ]}
+                    >
+                        <InputNumber
+                            type="number"
+                            min={1}
+                            max={50}
+                            placeholder="Nhập số người tối thiểu"
                             style={{ width: "100%" }}
                         />
                     </Form.Item>
