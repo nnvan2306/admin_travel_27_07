@@ -69,16 +69,6 @@ export default function ContactsPage() {
         }
     };
 
-    const handleDelete = async (id: number) => {
-        try {
-            await API.delete(`/contacts/${id}`);
-            notifySuccess("Xóa liên hệ thành công");
-            fetchContacts();
-        } catch (error) {
-            notifyError("Xóa liên hệ thất bại");
-        }
-    };
-
     const getServiceTypeName = (type: string) => {
         const types: Record<string, string> = {
             flight: "Vé máy bay",

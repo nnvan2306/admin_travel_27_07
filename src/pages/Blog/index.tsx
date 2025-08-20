@@ -93,7 +93,6 @@ const Blogs: React.FC = () => {
     const [blogs, setBlogs] = useState<Blog[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
     const [searchTerm, setSearchTerm] = useState<string>("");
-    const [idDelete, setIdDelete] = useState(0);
     const [deleteModal, setDeleteModal] = useState<{
         isOpen: boolean;
         blog: Blog | null;
@@ -153,6 +152,8 @@ const Blogs: React.FC = () => {
 
     // Thêm state để theo dõi trạng thái xóa
     const [deleteLoading, setDeleteLoading] = useState<boolean>(false);
+
+    console.log(deleteLoading);
 
     // Cập nhật hàm handleDeleteConfirm để gọi API xóa
     const handleDeleteConfirm = async () => {

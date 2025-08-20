@@ -84,12 +84,10 @@ const BlogNew: React.FC = () => {
             [field]: value,
         }));
         // Clear error when user starts typing
-        if (errors[field]) {
-            setErrors((prev) => ({
-                ...prev,
-                [field]: "",
-            }));
-        }
+        setErrors((prev) => ({
+            ...prev,
+            [field]: "",
+        }));
     };
 
     // Hàm hiển thị các tags dưới dạng badge

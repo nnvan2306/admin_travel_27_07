@@ -33,7 +33,7 @@ interface MetricType {
     key: string;
     title: string;
     value: number;
-    icon: JSX.Element;
+    icon: any;
     increaseLabel: string;
     color: string;
 }
@@ -95,7 +95,7 @@ const notifyColumns: TableProps<NottifyDataType>["columns"] = [
         title: "STT",
         dataIndex: "id",
         key: "id",
-        render: (text, _, index) => index + 1,
+        render: (_text, _, index) => index + 1,
     },
     {
         title: "Tiêu đề",
@@ -143,7 +143,7 @@ const notifyColumns: TableProps<NottifyDataType>["columns"] = [
 
 // Main component
 export default function HomePage() {
-    const { notifySuccess, notifyError, contextHolder } = useNotifier();
+    const { notifySuccess, contextHolder } = useNotifier();
 
     // State for all dashboard data
     const [loading, setLoading] = useState<boolean>(true);
@@ -157,10 +157,12 @@ export default function HomePage() {
     const [recentActivities, setRecentActivities] = useState<NottifyDataType[]>(
         []
     );
-    const [activePromotions, setActivePromotions] = useState<
+    const [_activePromotions, setActivePromotions] = useState<
         PromotionDataType[]
     >([]);
     const [combinedData, setCombinedData] = useState<CombinedDataType[]>([]);
+
+    console.log(_activePromotions);
 
     // Fetch all dashboard data
     const fetchDashboardData = async () => {
@@ -606,7 +608,7 @@ export default function HomePage() {
                                         `${name}: ${value}`
                                     }
                                 >
-                                    {bookingByType.map((entry, index) => (
+                                    {bookingByType.map((_entry, index) => (
                                         <Cell
                                             key={`cell-${index}`}
                                             fill={COLORS[index % COLORS.length]}

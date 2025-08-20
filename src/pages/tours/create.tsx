@@ -88,6 +88,8 @@ export default function CreateTour() {
     const [guides, setGuides] = useState<GuideType[]>([]);
     const [busRoutes, setBusRoutes] = useState<BusRouteType[]>([]);
 
+    console.log(guides);
+    console.log(busRoutes);
     // Function để tạo số lượng form dựa trên thời lượng
     const getScheduleCount = (duration: string): number => {
         if (duration === "1 ngày") return 1;

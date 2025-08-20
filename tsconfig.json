@@ -1,17 +1,18 @@
 {
-  "verbatimModuleSyntax": false,
-  "files": [],
-  "references": [
-    { "path": "./tsconfig.app.json" },
-    { "path": "./tsconfig.node.json" }
-  ],
-  "compilerOptions": {
-    "baseUrl": ".",
-    "paths": {
-      "@/*": ["./src/*"]
-    },
-    "types": ["node", "react-dom", "react"],
-    "jsx": "react-jsx",
-    "lib": ["dom", "dom.iterable", "esnext"]
-  }
+    "verbatimModuleSyntax": false,
+    "files": [],
+    "references": [
+        { "path": "./tsconfig.app.json" },
+        { "path": "./tsconfig.node.json" }
+    ],
+    "compilerOptions": {
+        "baseUrl": ".",
+        "paths": {
+            "@/*": ["./src/*"]
+        },
+        "types": ["node", "react-dom", "react"],
+        "jsx": "react-jsx",
+        "lib": ["dom", "dom.iterable", "esnext"],
+        "checkJs": false
+    }
 }

@@ -2,6 +2,20 @@
 import { useNotifier } from "@/hooks/useNotifier";
 import { API } from "@/lib/axios";
 import {
+    CalendarOutlined,
+    DollarOutlined,
+    EditOutlined,
+    EnvironmentOutlined,
+    EyeOutlined,
+    FilterOutlined,
+    MailOutlined,
+    MoreOutlined,
+    PhoneOutlined,
+    SearchOutlined,
+    UserOutlined,
+} from "@ant-design/icons";
+import {
+    Avatar,
     Badge,
     Button,
     Card,
@@ -12,36 +26,17 @@ import {
     Dropdown,
     Form,
     Input,
-    message,
     Modal,
     Row,
     Select,
     Space,
-    Spin,
     Table,
     Tag,
-    Tooltip,
     Typography,
-    Avatar,
 } from "antd";
 import type { ColumnsType } from "antd/es/table";
-import {
-    CalendarOutlined,
-    ClockCircleOutlined,
-    DeleteOutlined,
-    EditOutlined,
-    EyeOutlined,
-    FilterOutlined,
-    MoreOutlined,
-    SearchOutlined,
-    UserOutlined,
-    PhoneOutlined,
-    MailOutlined,
-    EnvironmentOutlined,
-    DollarOutlined,
-} from "@ant-design/icons";
-import { useEffect, useState } from "react";
 import dayjs from "dayjs";
+import { useEffect, useState } from "react";
 
 const { Title, Text } = Typography;
 const { RangePicker } = DatePicker;
@@ -305,9 +300,10 @@ const statusLabels = {
 };
 
 export default function Booking() {
-    const [bookings, setBookings] = useState<BookingType[]>([]);
     const [loading, setLoading] = useState(false);
-    const [selectedBooking, setSelectedBooking] = useState<BookingType | null>(null);
+    const [selectedBooking, setSelectedBooking] = useState<BookingType | null>(
+        null
+    );
     const [drawerVisible, setDrawerVisible] = useState(false);
     const [modalVisible, setModalVisible] = useState(false);
     const [filterForm] = Form.useForm();
@@ -325,7 +321,10 @@ export default function Booking() {
             setAllBookings(data.data);
             setFilteredBookings(data.data);
         } catch (error: any) {
-            notifyError(error?.response?.data?.message || "Không thể tải danh sách booking");
+            notifyError(
+                error?.response?.data?.message ||
+                    "Không thể tải danh sách booking"
+            );
         } finally {
             setLoading(false);
         }
@@ -338,7 +337,9 @@ export default function Booking() {
     // Handle status update
     const handleStatusUpdate = async (bookingId: number, newStatus: string) => {
         try {
-            await API.put(`/bookings/${bookingId}/status`, { status: newStatus });
+            await API.put(`/bookings/${bookingId}/status`, {
+                status: newStatus,
+            });
             notifySuccess("Cập nhật trạng thái thành công");
             // Refresh data after status update
             const response = await API.get("/bookings/all");
@@ -346,33 +347,35 @@ export default function Booking() {
             setAllBookings(data.data);
             setFilteredBookings(data.data);
         } catch (error: any) {
-            notifyError(error?.response?.data?.message || "Cập nhật trạng thái thất bại");
+            notifyError(
+                error?.response?.data?.message || "Cập nhật trạng thái thất bại"
+            );
         }
     };
 
-    // Handle delete booking
-    const handleDelete = async (bookingId: number) => {
-        Modal.confirm({
-            title: "Xác nhận xóa",
-            content: "Bạn có chắc chắn muốn xóa booking này?",
-            okText: "Xóa",
-            okType: "danger",
-            cancelText: "Hủy",
-            onOk: async () => {
-                try {
-                    await API.delete(`/bookings/${bookingId}`);
-                    notifySuccess("Xóa booking thành công");
-                    // Refresh data after delete
-                    const response = await API.get("/bookings/all");
-                    const data: BookingResponse = response.data;
-                    setAllBookings(data.data);
-                    setFilteredBookings(data.data);
-                } catch (error: any) {
-                    notifyError(error?.response?.data?.message || "Xóa booking thất bại");
-                }
-            },
-        });
-    };
+    // // Handle delete booking
+    // const handleDelete = async (bookingId: number) => {
+    //     Modal.confirm({
+    //         title: "Xác nhận xóa",
+    //         content: "Bạn có chắc chắn muốn xóa booking này?",
+    //         okText: "Xóa",
+    //         okType: "danger",
+    //         cancelText: "Hủy",
+    //         onOk: async () => {
+    //             try {
+    //                 await API.delete(`/bookings/${bookingId}`);
+    //                 notifySuccess("Xóa booking thành công");
+    //                 // Refresh data after delete
+    //                 const response = await API.get("/bookings/all");
+    //                 const data: BookingResponse = response.data;
+    //                 setAllBookings(data.data);
+    //                 setFilteredBookings(data.data);
+    //             } catch (error: any) {
+    //                 notifyError(error?.response?.data?.message || "Xóa booking thất bại");
+    //             }
+    //         },
+    //     });
+    // };
 
     // Handle filter with JavaScript
     const handleFilter = (values: any) => {
@@ -381,33 +384,55 @@ export default function Booking() {
         // Search filter
         if (values.search) {
             const searchTerm = values.search.toLowerCase();
-            filtered = filtered.filter(booking => 
-                booking.user.full_name.toLowerCase().includes(searchTerm) ||
-                booking.user.email.toLowerCase().includes(searchTerm) ||
-                (booking.tour && booking.tour.tour_name.toLowerCase().includes(searchTerm)) ||
-                (booking.tour && booking.tour.category.category_name.toLowerCase().includes(searchTerm)) ||
-                (booking.tour && booking.tour.destinations.some(dest => 
-                    dest.name.toLowerCase().includes(searchTerm)
-                )) ||
-                (booking.custom_tour && booking.custom_tour.destination.name.toLowerCase().includes(searchTerm)) ||
-                (booking.custom_tour && booking.custom_tour.destination.category.category_name.toLowerCase().includes(searchTerm)) ||
-                (booking.custom_tour && `custom tour ${booking.custom_tour.destination.name}`.toLowerCase().includes(searchTerm))
+            filtered = filtered.filter(
+                (booking) =>
+                    booking.user.full_name.toLowerCase().includes(searchTerm) ||
+                    booking.user.email.toLowerCase().includes(searchTerm) ||
+                    (booking.tour &&
+                        booking.tour.tour_name
+                            .toLowerCase()
+                            .includes(searchTerm)) ||
+                    (booking.tour &&
+                        booking.tour.category.category_name
+                            .toLowerCase()
+                            .includes(searchTerm)) ||
+                    (booking.tour &&
+                        booking.tour.destinations.some((dest) =>
+                            dest.name.toLowerCase().includes(searchTerm)
+                        )) ||
+                    (booking.custom_tour &&
+                        booking.custom_tour.destination.name
+                            .toLowerCase()
+                            .includes(searchTerm)) ||
+                    (booking.custom_tour &&
+                        booking.custom_tour.destination.category.category_name
+                            .toLowerCase()
+                            .includes(searchTerm)) ||
+                    (booking.custom_tour &&
+                        `custom tour ${booking.custom_tour.destination.name}`
+                            .toLowerCase()
+                            .includes(searchTerm))
             );
         }
 
         // Status filter
         if (values.status) {
-            filtered = filtered.filter(booking => booking.status === values.status);
+            filtered = filtered.filter(
+                (booking) => booking.status === values.status
+            );
         }
 
         // Date range filter
         if (values.dateRange && values.dateRange.length === 2) {
-            const startDate = values.dateRange[0].startOf('day');
-            const endDate = values.dateRange[1].endOf('day');
-            
-            filtered = filtered.filter(booking => {
+            const startDate = values.dateRange[0].startOf("day");
+            const endDate = values.dateRange[1].endOf("day");
+
+            filtered = filtered.filter((booking) => {
                 const bookingDate = dayjs(booking.start_date);
-                return bookingDate.isAfter(startDate) && bookingDate.isBefore(endDate);
+                return (
+                    bookingDate.isAfter(startDate) &&
+                    bookingDate.isBefore(endDate)
+                );
             });
         }
 
@@ -430,14 +455,16 @@ export default function Booking() {
             width: 200,
             render: (user) => (
                 <div className="flex items-center space-x-2">
-                    <Avatar 
-                        src={user.avatar_url} 
+                    <Avatar
+                        src={user.avatar_url}
                         icon={<UserOutlined />}
                         size="small"
                     />
                     <div>
                         <div className="font-medium">{user.full_name}</div>
-                        <div className="text-gray-500 text-sm">{user.email}</div>
+                        <div className="text-gray-500 text-sm">
+                            {user.email}
+                        </div>
                     </div>
                 </div>
             ),
@@ -453,16 +480,18 @@ export default function Booking() {
                     return (
                         <div>
                             <div className="font-medium text-sm leading-tight mb-1">
-                                Custom Tour - {record.custom_tour.destination.name}
+                                Custom Tour -{" "}
+                                {record.custom_tour.destination.name}
                             </div>
                             <Tag color="purple">Custom Tour</Tag>
                             <div className="text-gray-500 text-xs mt-1">
-                                {record.custom_tour.duration} ngày - {record.custom_tour.vehicle}
+                                {record.custom_tour.duration} ngày -{" "}
+                                {record.custom_tour.vehicle}
                             </div>
                         </div>
                     );
                 }
-                
+
                 // Regular tour
                 if (tour) {
                     return (
@@ -470,14 +499,16 @@ export default function Booking() {
                             <div className="font-medium text-sm leading-tight mb-1">
                                 {tour.tour_name}
                             </div>
-                            <Tag color="blue">{tour.category.category_name}</Tag>
+                            <Tag color="blue">
+                                {tour.category.category_name}
+                            </Tag>
                             <div className="text-gray-500 text-xs mt-1">
                                 {tour.duration}
                             </div>
                         </div>
                     );
                 }
-                
+
                 return <div className="text-gray-400">Không có tour</div>;
             },
         },
@@ -524,24 +555,18 @@ export default function Booking() {
             width: 120,
             render: (_, record) => (
                 <div className="space-y-1">
-                    {record.custom_tour && (
-                        <Tag color="purple" size="small">Custom</Tag>
-                    )}
-                    {record.guide && (
-                        <Tag color="green" size="small">HDV</Tag>
-                    )}
-                    {record.hotel && (
-                        <Tag color="blue" size="small">KS</Tag>
-                    )}
-                    {record.bus_route && (
-                        <Tag color="orange" size="small">Bus</Tag>
-                    )}
-                    {record.motorbike && (
-                        <Tag color="cyan" size="small">Xe</Tag>
-                    )}
-                    {!record.guide && !record.hotel && !record.bus_route && !record.motorbike && !record.custom_tour && (
-                        <Tag color="default" size="small">Cơ bản</Tag>
-                    )}
+                    {record.custom_tour && <Tag color="purple">Custom</Tag>}
+                    {record.guide && <Tag color="green">HDV</Tag>}
+                    {record.hotel && <Tag color="blue">KS</Tag>}
+                    {record.bus_route && <Tag color="orange">Bus</Tag>}
+                    {record.motorbike && <Tag color="cyan">Xe</Tag>}
+                    {!record.guide &&
+                        !record.hotel &&
+                        !record.bus_route &&
+                        !record.motorbike &&
+                        !record.custom_tour && (
+                            <Tag color="default">Cơ bản</Tag>
+                        )}
                 </div>
             ),
         },
@@ -603,7 +628,7 @@ export default function Booking() {
     return (
         <>
             {contextHolder}
-            
+
             <div className="p-6 bg-gray-50 min-h-screen">
                 <div className="max-w-7xl mx-auto">
                     {/* Header */}
@@ -612,7 +637,8 @@ export default function Booking() {
                             Quản lý Booking
                         </Title>
                         <Text type="secondary">
-                            Quản lý và theo dõi tất cả các booking của khách hàng
+                            Quản lý và theo dõi tất cả các booking của khách
+                            hàng
                         </Text>
                     </div>
 
@@ -632,28 +658,33 @@ export default function Booking() {
                                     allowClear
                                 />
                             </Form.Item>
-                            
+
                             <Form.Item name="status" className="mb-0">
                                 <Select
                                     placeholder="Trạng thái"
                                     style={{ width: 150 }}
                                     allowClear
                                 >
-                                    {Object.entries(statusLabels).map(([key, label]) => (
-                                        <Select.Option key={key} value={key}>
-                                            {label}
-                                        </Select.Option>
-                                    ))}
+                                    {Object.entries(statusLabels).map(
+                                        ([key, label]) => (
+                                            <Select.Option
+                                                key={key}
+                                                value={key}
+                                            >
+                                                {label}
+                                            </Select.Option>
+                                        )
+                                    )}
                                 </Select>
                             </Form.Item>
-                            
+
                             <Form.Item name="dateRange" className="mb-0">
                                 <RangePicker
                                     placeholder={["Từ ngày", "Đến ngày"]}
                                     format="DD/MM/YYYY"
                                 />
                             </Form.Item>
-                            
+
                             <Form.Item className="mb-0">
                                 <Space>
                                     <Button
@@ -684,21 +715,33 @@ export default function Booking() {
                                 <div className="text-2xl font-bold text-blue-600">
                                     {filteredBookings.length}
                                 </div>
-                                <div className="text-gray-600">Kết quả tìm kiếm</div>
+                                <div className="text-gray-600">
+                                    Kết quả tìm kiếm
+                                </div>
                             </Card>
                         </Col>
                         <Col span={6}>
                             <Card className="text-center shadow-sm">
                                 <div className="text-2xl font-bold text-orange-600">
-                                    {filteredBookings.filter(b => b.status === "pending").length}
+                                    {
+                                        filteredBookings.filter(
+                                            (b) => b.status === "pending"
+                                        ).length
+                                    }
                                 </div>
-                                <div className="text-gray-600">Chờ xác nhận</div>
+                                <div className="text-gray-600">
+                                    Chờ xác nhận
+                                </div>
                             </Card>
                         </Col>
                         <Col span={6}>
                             <Card className="text-center shadow-sm">
                                 <div className="text-2xl font-bold text-green-600">
-                                    {filteredBookings.filter(b => b.status === "completed").length}
+                                    {
+                                        filteredBookings.filter(
+                                            (b) => b.status === "completed"
+                                        ).length
+                                    }
                                 </div>
                                 <div className="text-gray-600">Hoàn thành</div>
                             </Card>
@@ -706,7 +749,11 @@ export default function Booking() {
                         <Col span={6}>
                             <Card className="text-center shadow-sm">
                                 <div className="text-2xl font-bold text-red-600">
-                                    {filteredBookings.filter(b => b.status === "cancelled").length}
+                                    {
+                                        filteredBookings.filter(
+                                            (b) => b.status === "cancelled"
+                                        ).length
+                                    }
                                 </div>
                                 <div className="text-gray-600">Đã hủy</div>
                             </Card>
@@ -748,30 +795,46 @@ export default function Booking() {
                         <Card title="Thông tin Booking" size="small">
                             <Descriptions column={1} size="small">
                                 <Descriptions.Item label="Mã Booking">
-                                    <Text strong>#{selectedBooking.booking_id}</Text>
+                                    <Text strong>
+                                        #{selectedBooking.booking_id}
+                                    </Text>
                                 </Descriptions.Item>
                                 <Descriptions.Item label="Trạng thái">
-                                    <Tag color={statusColors[selectedBooking.status]}>
+                                    <Tag
+                                        color={
+                                            statusColors[selectedBooking.status]
+                                        }
+                                    >
                                         {statusLabels[selectedBooking.status]}
                                     </Tag>
                                 </Descriptions.Item>
                                 <Descriptions.Item label="Số lượng">
-                                    <Badge count={selectedBooking.quantity} showZero />
+                                    <Badge
+                                        count={selectedBooking.quantity}
+                                        showZero
+                                    />
                                 </Descriptions.Item>
                                 <Descriptions.Item label="Tổng tiền">
                                     <Text strong className="text-green-600">
-                                        {parseInt(selectedBooking.total_price).toLocaleString("vi-VN")} VNĐ
+                                        {parseInt(
+                                            selectedBooking.total_price
+                                        ).toLocaleString("vi-VN")}{" "}
+                                        VNĐ
                                     </Text>
                                 </Descriptions.Item>
                                 <Descriptions.Item label="Ngày khởi hành">
                                     <div>
                                         <CalendarOutlined className="mr-2" />
-                                        {dayjs(selectedBooking.start_date).format("DD/MM/YYYY")}
+                                        {dayjs(
+                                            selectedBooking.start_date
+                                        ).format("DD/MM/YYYY")}
                                     </div>
                                 </Descriptions.Item>
                                 <Descriptions.Item label="Ngày tạo">
                                     <div>
-                                        {dayjs(selectedBooking.created_at).format("DD/MM/YYYY HH:mm")}
+                                        {dayjs(
+                                            selectedBooking.created_at
+                                        ).format("DD/MM/YYYY HH:mm")}
                                     </div>
                                 </Descriptions.Item>
                             </Descriptions>
@@ -780,8 +843,8 @@ export default function Booking() {
                         {/* Customer Info */}
                         <Card title="Thông tin khách hàng" size="small">
                             <div className="flex items-center space-x-4 mb-4">
-                                <Avatar 
-                                    src={selectedBooking.user.avatar_url} 
+                                <Avatar
+                                    src={selectedBooking.user.avatar_url}
                                     icon={<UserOutlined />}
                                     size={64}
                                 />
@@ -809,23 +872,47 @@ export default function Booking() {
                                 // Custom Tour Info
                                 <div className="mb-4">
                                     <Title level={5} className="mb-2">
-                                        Custom Tour - {selectedBooking.custom_tour.destination.name}
+                                        Custom Tour -{" "}
+                                        {
+                                            selectedBooking.custom_tour
+                                                .destination.name
+                                        }
                                     </Title>
                                     <div className="flex items-center space-x-2 mb-2">
                                         <Tag color="purple">Custom Tour</Tag>
-                                        <Tag color="green">{selectedBooking.custom_tour.duration} ngày</Tag>
-                                        <Tag color="orange">{selectedBooking.custom_tour.vehicle}</Tag>
+                                        <Tag color="green">
+                                            {
+                                                selectedBooking.custom_tour
+                                                    .duration
+                                            }{" "}
+                                            ngày
+                                        </Tag>
+                                        <Tag color="orange">
+                                            {
+                                                selectedBooking.custom_tour
+                                                    .vehicle
+                                            }
+                                        </Tag>
                                     </div>
                                     {selectedBooking.custom_tour.note && (
                                         <div className="text-sm text-gray-600 mb-2">
-                                            <strong>Ghi chú:</strong> {selectedBooking.custom_tour.note}
+                                            <strong>Ghi chú:</strong>{" "}
+                                            {selectedBooking.custom_tour.note}
                                         </div>
                                     )}
                                     <div className="text-sm text-gray-600">
                                         <EnvironmentOutlined className="mr-1" />
-                                        Điểm đến: {selectedBooking.custom_tour.destination.name}
+                                        Điểm đến:{" "}
+                                        {
+                                            selectedBooking.custom_tour
+                                                .destination.name
+                                        }
                                         <Tag color="blue" className="ml-2">
-                                            {selectedBooking.custom_tour.destination.category.category_name}
+                                            {
+                                                selectedBooking.custom_tour
+                                                    .destination.category
+                                                    .category_name
+                                            }
                                         </Tag>
                                     </div>
                                 </div>
@@ -833,31 +920,54 @@ export default function Booking() {
                                 // Regular Tour Info
                                 <div className="mb-4">
                                     <Title level={5} className="mb-2">
-                                        {selectedBooking.tour?.tour_name || "Custom Tour"}
+                                        {selectedBooking.tour?.tour_name ||
+                                            "Custom Tour"}
                                     </Title>
                                     <div className="flex items-center space-x-2 mb-2">
-                                        <Tag color="blue">{selectedBooking.tour.category.category_name}</Tag>
-                                        <Tag color="green">{selectedBooking.tour.duration}</Tag>
+                                        <Tag color="blue">
+                                            {
+                                                selectedBooking.tour.category
+                                                    .category_name
+                                            }
+                                        </Tag>
+                                        <Tag color="green">
+                                            {selectedBooking.tour.duration}
+                                        </Tag>
                                     </div>
                                     <div className="text-sm text-gray-600">
                                         <DollarOutlined className="mr-1" />
-                                        Giá gốc: {parseInt(selectedBooking.tour.price).toLocaleString("vi-VN")} VNĐ
-                                        {selectedBooking.tour.discount_price && (
+                                        Giá gốc:{" "}
+                                        {parseInt(
+                                            selectedBooking.tour.price
+                                        ).toLocaleString("vi-VN")}{" "}
+                                        VNĐ
+                                        {selectedBooking.tour
+                                            .discount_price && (
                                             <span className="ml-2 text-green-600">
-                                                → Giảm: {parseInt(selectedBooking.tour.discount_price).toLocaleString("vi-VN")} VNĐ
+                                                → Giảm:{" "}
+                                                {parseInt(
+                                                    selectedBooking.tour
+                                                        .discount_price
+                                                ).toLocaleString("vi-VN")}{" "}
+                                                VNĐ
                                             </span>
                                         )}
                                     </div>
-                                    
+
                                     <Descriptions column={1} size="small">
                                         <Descriptions.Item label="Điểm đến">
                                             <div className="space-y-1">
-                                                {selectedBooking.tour.destinations.map((dest, index) => (
-                                                    <Tag key={index} color="green">
-                                                        <EnvironmentOutlined className="mr-1" />
-                                                        {dest.name}
-                                                    </Tag>
-                                                ))}
+                                                {selectedBooking.tour.destinations.map(
+                                                    (dest, index) => (
+                                                        <Tag
+                                                            key={index}
+                                                            color="green"
+                                                        >
+                                                            <EnvironmentOutlined className="mr-1" />
+                                                            {dest.name}
+                                                        </Tag>
+                                                    )
+                                                )}
                                             </div>
                                         </Descriptions.Item>
                                     </Descriptions>
@@ -870,30 +980,45 @@ export default function Booking() {
                         </Card>
 
                         {/* Schedule */}
-                        {selectedBooking && selectedBooking?.tour?.schedules && selectedBooking?.tour?.schedules.length > 0 && (
-                            <Card title="Lịch trình" size="small">
-                                <div className="space-y-3">
-                                    {selectedBooking?.tour?.schedules.map((schedule) => (
-                                        <div key={schedule.schedule_id} className="border-l-4 border-blue-500 pl-4">
-                                            <div className="flex items-center justify-between mb-2">
-                                                <div className="bg-blue-100 text-blue-600 px-2 py-1 rounded text-sm font-medium">
-                                                    Ngày {schedule.day}
+                        {selectedBooking &&
+                            selectedBooking?.tour?.schedules &&
+                            selectedBooking?.tour?.schedules.length > 0 && (
+                                <Card title="Lịch trình" size="small">
+                                    <div className="space-y-3">
+                                        {selectedBooking?.tour?.schedules.map(
+                                            (schedule) => (
+                                                <div
+                                                    key={schedule.schedule_id}
+                                                    className="border-l-4 border-blue-500 pl-4"
+                                                >
+                                                    <div className="flex items-center justify-between mb-2">
+                                                        <div className="bg-blue-100 text-blue-600 px-2 py-1 rounded text-sm font-medium">
+                                                            Ngày {schedule.day}
+                                                        </div>
+                                                        <div className="text-sm text-gray-500">
+                                                            {
+                                                                schedule.start_time
+                                                            }{" "}
+                                                            -{" "}
+                                                            {schedule.end_time}
+                                                        </div>
+                                                    </div>
+                                                    <div>
+                                                        <div className="font-medium mb-1">
+                                                            {schedule.title}
+                                                        </div>
+                                                        <div className="text-sm text-gray-600">
+                                                            {
+                                                                schedule.activity_description
+                                                            }
+                                                        </div>
+                                                    </div>
                                                 </div>
-                                                <div className="text-sm text-gray-500">
-                                                    {schedule.start_time} - {schedule.end_time}
-                                                </div>
-                                            </div>
-                                            <div>
-                                                <div className="font-medium mb-1">{schedule.title}</div>
-                                                <div className="text-sm text-gray-600">
-                                                    {schedule.activity_description}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            </Card>
-                        )}
+                                            )
+                                        )}
+                                    </div>
+                                </Card>
+                            )}
 
                         {/* Services */}
                         <Card title="Dịch vụ đi kèm" size="small">
@@ -901,95 +1026,267 @@ export default function Booking() {
                                 {selectedBooking.custom_tour && (
                                     <div className="border rounded-lg p-3 border-purple-200 bg-purple-50">
                                         <div className="flex items-center justify-between mb-2">
-                                            <Title level={5} className="mb-0">Custom Tour</Title>
+                                            <Title level={5} className="mb-0">
+                                                Custom Tour
+                                            </Title>
                                             <Tag color="purple">Custom</Tag>
                                         </div>
                                         <div className="space-y-1 text-sm">
-                                            <div><strong>Điểm đến:</strong> {selectedBooking.custom_tour.destination.name}</div>
-                                            <div><strong>Thời gian:</strong> {selectedBooking.custom_tour.duration} ngày</div>
-                                            <div><strong>Phương tiện:</strong> {selectedBooking.custom_tour.vehicle}</div>
-                                            {selectedBooking.custom_tour.note && (
-                                                <div><strong>Ghi chú:</strong> {selectedBooking.custom_tour.note}</div>
+                                            <div>
+                                                <strong>Điểm đến:</strong>{" "}
+                                                {
+                                                    selectedBooking.custom_tour
+                                                        .destination.name
+                                                }
+                                            </div>
+                                            <div>
+                                                <strong>Thời gian:</strong>{" "}
+                                                {
+                                                    selectedBooking.custom_tour
+                                                        .duration
+                                                }{" "}
+                                                ngày
+                                            </div>
+                                            <div>
+                                                <strong>Phương tiện:</strong>{" "}
+                                                {
+                                                    selectedBooking.custom_tour
+                                                        .vehicle
+                                                }
+                                            </div>
+                                            {selectedBooking.custom_tour
+                                                .note && (
+                                                <div>
+                                                    <strong>Ghi chú:</strong>{" "}
+                                                    {
+                                                        selectedBooking
+                                                            .custom_tour.note
+                                                    }
+                                                </div>
                                             )}
                                         </div>
                                     </div>
                                 )}
-                                
+
                                 {selectedBooking.bus_route && (
                                     <div className="border rounded-lg p-3 border-orange-200 bg-orange-50">
                                         <div className="flex items-center justify-between mb-2">
-                                            <Title level={5} className="mb-0">Tuyến xe buýt</Title>
+                                            <Title level={5} className="mb-0">
+                                                Tuyến xe buýt
+                                            </Title>
                                             <Tag color="orange">Bus</Tag>
                                         </div>
                                         <div className="space-y-1 text-sm">
-                                            <div><strong>Tên tuyến:</strong> {selectedBooking.bus_route.route_name}</div>
-                                            <div><strong>Loại xe:</strong> {selectedBooking.bus_route.vehicle_type}</div>
-                                            <div><strong>Biển số:</strong> {selectedBooking.bus_route.license_plate}</div>
-                                            <div><strong>Số ghế:</strong> {selectedBooking.bus_route.seats}</div>
-                                            <div><strong>Giá:</strong> {parseInt(selectedBooking.bus_route.price).toLocaleString("vi-VN")} VNĐ</div>
-                                            {selectedBooking.bus_route.description && (
-                                                <div><strong>Mô tả:</strong> {selectedBooking.bus_route.description}</div>
+                                            <div>
+                                                <strong>Tên tuyến:</strong>{" "}
+                                                {
+                                                    selectedBooking.bus_route
+                                                        .route_name
+                                                }
+                                            </div>
+                                            <div>
+                                                <strong>Loại xe:</strong>{" "}
+                                                {
+                                                    selectedBooking.bus_route
+                                                        .vehicle_type
+                                                }
+                                            </div>
+                                            <div>
+                                                <strong>Biển số:</strong>{" "}
+                                                {
+                                                    selectedBooking.bus_route
+                                                        .license_plate
+                                                }
+                                            </div>
+                                            <div>
+                                                <strong>Số ghế:</strong>{" "}
+                                                {
+                                                    selectedBooking.bus_route
+                                                        .seats
+                                                }
+                                            </div>
+                                            <div>
+                                                <strong>Giá:</strong>{" "}
+                                                {parseInt(
+                                                    selectedBooking.bus_route
+                                                        .price
+                                                ).toLocaleString("vi-VN")}{" "}
+                                                VNĐ
+                                            </div>
+                                            {selectedBooking.bus_route
+                                                .description && (
+                                                <div>
+                                                    <strong>Mô tả:</strong>{" "}
+                                                    {
+                                                        selectedBooking
+                                                            .bus_route
+                                                            .description
+                                                    }
+                                                </div>
                                             )}
                                         </div>
                                     </div>
                                 )}
-                                
+
                                 {selectedBooking.motorbike && (
                                     <div className="border rounded-lg p-3 border-cyan-200 bg-cyan-50">
                                         <div className="flex items-center justify-between mb-2">
-                                            <Title level={5} className="mb-0">Xe máy</Title>
+                                            <Title level={5} className="mb-0">
+                                                Xe máy
+                                            </Title>
                                             <Tag color="cyan">Xe</Tag>
                                         </div>
                                         <div className="space-y-1 text-sm">
-                                            <div><strong>Loại xe:</strong> {selectedBooking.motorbike.bike_type}</div>
-                                            <div><strong>Vị trí:</strong> {selectedBooking.motorbike.location}</div>
-                                            <div><strong>Biển số:</strong> {selectedBooking.motorbike.license_plate}</div>
-                                            <div><strong>Giá/ngày:</strong> {selectedBooking.motorbike.price_per_day.toLocaleString("vi-VN")} VNĐ</div>
-                                            <div><strong>Mô tả:</strong> {selectedBooking.motorbike.description}</div>
+                                            <div>
+                                                <strong>Loại xe:</strong>{" "}
+                                                {
+                                                    selectedBooking.motorbike
+                                                        .bike_type
+                                                }
+                                            </div>
+                                            <div>
+                                                <strong>Vị trí:</strong>{" "}
+                                                {
+                                                    selectedBooking.motorbike
+                                                        .location
+                                                }
+                                            </div>
+                                            <div>
+                                                <strong>Biển số:</strong>{" "}
+                                                {
+                                                    selectedBooking.motorbike
+                                                        .license_plate
+                                                }
+                                            </div>
+                                            <div>
+                                                <strong>Giá/ngày:</strong>{" "}
+                                                {selectedBooking.motorbike.price_per_day.toLocaleString(
+                                                    "vi-VN"
+                                                )}{" "}
+                                                VNĐ
+                                            </div>
+                                            <div>
+                                                <strong>Mô tả:</strong>{" "}
+                                                {
+                                                    selectedBooking.motorbike
+                                                        .description
+                                                }
+                                            </div>
                                         </div>
                                     </div>
                                 )}
-                                
+
                                 {selectedBooking.guide && (
                                     <div className="border rounded-lg p-3 border-green-200 bg-green-50">
                                         <div className="flex items-center justify-between mb-2">
-                                            <Title level={5} className="mb-0">Hướng dẫn viên</Title>
+                                            <Title level={5} className="mb-0">
+                                                Hướng dẫn viên
+                                            </Title>
                                             <Tag color="green">HDV</Tag>
                                         </div>
                                         <div className="space-y-1 text-sm">
-                                            <div><strong>Tên:</strong> {selectedBooking.guide.name}</div>
-                                            <div><strong>Ngôn ngữ:</strong> {selectedBooking.guide.language}</div>
-                                            <div><strong>Kinh nghiệm:</strong> {selectedBooking.guide.experience_years} năm</div>
-                                            <div><strong>Giá/ngày:</strong> {parseInt(selectedBooking.guide.price_per_day).toLocaleString("vi-VN")} VNĐ</div>
-                                            <div><strong>Email:</strong> {selectedBooking.guide.email}</div>
-                                            <div><strong>SĐT:</strong> {selectedBooking.guide.phone}</div>
+                                            <div>
+                                                <strong>Tên:</strong>{" "}
+                                                {selectedBooking.guide.name}
+                                            </div>
+                                            <div>
+                                                <strong>Ngôn ngữ:</strong>{" "}
+                                                {selectedBooking.guide.language}
+                                            </div>
+                                            <div>
+                                                <strong>Kinh nghiệm:</strong>{" "}
+                                                {
+                                                    selectedBooking.guide
+                                                        .experience_years
+                                                }{" "}
+                                                năm
+                                            </div>
+                                            <div>
+                                                <strong>Giá/ngày:</strong>{" "}
+                                                {parseInt(
+                                                    selectedBooking.guide
+                                                        .price_per_day
+                                                ).toLocaleString("vi-VN")}{" "}
+                                                VNĐ
+                                            </div>
+                                            <div>
+                                                <strong>Email:</strong>{" "}
+                                                {selectedBooking.guide.email}
+                                            </div>
+                                            <div>
+                                                <strong>SĐT:</strong>{" "}
+                                                {selectedBooking.guide.phone}
+                                            </div>
                                         </div>
                                     </div>
                                 )}
-                                
+
                                 {selectedBooking.hotel && (
                                     <div className="border rounded-lg p-3 border-blue-200 bg-blue-50">
                                         <div className="flex items-center justify-between mb-2">
-                                            <Title level={5} className="mb-0">Khách sạn</Title>
+                                            <Title level={5} className="mb-0">
+                                                Khách sạn
+                                            </Title>
                                             <Tag color="blue">KS</Tag>
                                         </div>
                                         <div className="space-y-1 text-sm">
-                                            <div><strong>Tên:</strong> {selectedBooking.hotel.name}</div>
-                                            <div><strong>Địa điểm:</strong> {selectedBooking.hotel.location}</div>
-                                            <div><strong>Loại phòng:</strong> {selectedBooking.hotel.room_type}</div>
-                                            <div><strong>Giá:</strong> {parseInt(selectedBooking.hotel.price).toLocaleString("vi-VN")} VNĐ</div>
-                                            <div><strong>Sức chứa:</strong> {selectedBooking.hotel.max_guests} người</div>
-                                            <div><strong>SĐT:</strong> {selectedBooking.hotel.contact_phone}</div>
-                                            <div><strong>Email:</strong> {selectedBooking.hotel.contact_email}</div>
+                                            <div>
+                                                <strong>Tên:</strong>{" "}
+                                                {selectedBooking.hotel.name}
+                                            </div>
+                                            <div>
+                                                <strong>Địa điểm:</strong>{" "}
+                                                {selectedBooking.hotel.location}
+                                            </div>
+                                            <div>
+                                                <strong>Loại phòng:</strong>{" "}
+                                                {
+                                                    selectedBooking.hotel
+                                                        .room_type
+                                                }
+                                            </div>
+                                            <div>
+                                                <strong>Giá:</strong>{" "}
+                                                {parseInt(
+                                                    selectedBooking.hotel.price
+                                                ).toLocaleString("vi-VN")}{" "}
+                                                VNĐ
+                                            </div>
+                                            <div>
+                                                <strong>Sức chứa:</strong>{" "}
+                                                {
+                                                    selectedBooking.hotel
+                                                        .max_guests
+                                                }{" "}
+                                                người
+                                            </div>
+                                            <div>
+                                                <strong>SĐT:</strong>{" "}
+                                                {
+                                                    selectedBooking.hotel
+                                                        .contact_phone
+                                                }
+                                            </div>
+                                            <div>
+                                                <strong>Email:</strong>{" "}
+                                                {
+                                                    selectedBooking.hotel
+                                                        .contact_email
+                                                }
+                                            </div>
                                         </div>
                                     </div>
                                 )}
-                                
-                                {!selectedBooking.guide && !selectedBooking.hotel && !selectedBooking.bus_route && !selectedBooking.motorbike && !selectedBooking.custom_tour && (
-                                    <div className="text-center text-gray-500 py-4">
-                                        Không có dịch vụ đi kèm
-                                    </div>
-                                )}
+
+                                {!selectedBooking.guide &&
+                                    !selectedBooking.hotel &&
+                                    !selectedBooking.bus_route &&
+                                    !selectedBooking.motorbike &&
+                                    !selectedBooking.custom_tour && (
+                                        <div className="text-center text-gray-500 py-4">
+                                            Không có dịch vụ đi kèm
+                                        </div>
+                                    )}
                             </div>
                         </Card>
                     </div>
@@ -1012,32 +1309,41 @@ export default function Booking() {
                                 Khách hàng: {selectedBooking.user.full_name}
                             </Text>
                         </div>
-                        
+
                         <div>
                             <Text strong>Trạng thái hiện tại: </Text>
                             <Tag color={statusColors[selectedBooking.status]}>
                                 {statusLabels[selectedBooking.status]}
                             </Tag>
                         </div>
-                        
+
                         <div>
                             <Text strong>Cập nhật thành: </Text>
                             <div className="mt-2 space-x-2 gap-2">
-                                {Object.entries(statusLabels).map(([key, label]) => (
-                                    <Button
-                                    style={{
-                                        margin: "0 4px"
-                                    }}
-                                        key={key}
-                                        type={selectedBooking.status === key ? "primary" : "default"}
-                                        onClick={() => {
-                                            handleStatusUpdate(selectedBooking.booking_id, key);
-                                            setModalVisible(false);
-                                        }}
-                                    >
-                                        {label}
-                                    </Button>
-                                ))}
+                                {Object.entries(statusLabels).map(
+                                    ([key, label]) => (
+                                        <Button
+                                            style={{
+                                                margin: "0 4px",
+                                            }}
+                                            key={key}
+                                            type={
+                                                selectedBooking.status === key
+                                                    ? "primary"
+                                                    : "default"
+                                            }
+                                            onClick={() => {
+                                                handleStatusUpdate(
+                                                    selectedBooking.booking_id,
+                                                    key
+                                                );
+                                                setModalVisible(false);
+                                            }}
+                                        >
+                                            {label}
+                                        </Button>
+                                    )
+                                )}
                             </div>
                         </div>
                     </div>

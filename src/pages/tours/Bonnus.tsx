@@ -158,42 +158,40 @@ export default function Bonnus() {
         setModalVisible(true);
     };
 
-    const handleDelete = async (id: number) => {
-        Modal.confirm({
-            title: "Xác nhận xóa",
-            content: "Bạn có chắc chắn muốn xóa mã khuyến mãi này không?",
-            okText: "Xóa",
-            okType: "danger",
-            cancelText: "Hủy",
-            onOk: async () => {
-                try {
-                    const response = await axios.delete(
-                        `${API_URL}/promotions/${id}`
-                    );
+    // const handleDelete = async (id: number) => {
+    //     Modal.confirm({
+    //         title: "Xác nhận xóa",
+    //         content: "Bạn có chắc chắn muốn xóa mã khuyến mãi này không?",
+    //         okText: "Xóa",
+    //         okType: "danger",
+    //         cancelText: "Hủy",
+    //         onOk: async () => {
+    //             try {
+    //                 const response = await axios.delete(
+    //                     `${API_URL}/promotions/${id}`
+    //                 );
 
-                    if (response.data.success) {
-                        setPromotions(
-                            promotions.filter(
-                                (promo) => promo.id !== id
-                            )
-                        );
-                        message.success(
-                            response.data.message ||
-                                "Xóa mã khuyến mãi thành công"
-                        );
-                    } else {
-                        message.error(
-                            response.data.message ||
-                                "Không thể xóa mã khuyến mãi"
-                        );
-                    }
-                } catch (error) {
-                    console.error("Error deleting promotion:", error);
-                    message.error("Không thể xóa mã khuyến mãi");
-                }
-            },
-        });
-    };
+    //                 if (response.data.success) {
+    //                     setPromotions(
+    //                         promotions.filter((promo) => promo.id !== id)
+    //                     );
+    //                     message.success(
+    //                         response.data.message ||
+    //                             "Xóa mã khuyến mãi thành công"
+    //                     );
+    //                 } else {
+    //                     message.error(
+    //                         response.data.message ||
+    //                             "Không thể xóa mã khuyến mãi"
+    //                     );
+    //                 }
+    //             } catch (error) {
+    //                 console.error("Error deleting promotion:", error);
+    //                 message.error("Không thể xóa mã khuyến mãi");
+    //             }
+    //         },
+    //     });
+    // };
 
     const handleToggleStatus = async (id: number, currentStatus: boolean) => {
         try {
@@ -400,19 +398,16 @@ export default function Bonnus() {
         {
             title: "Trạng thái",
             key: "status",
-            render: (_, record: Promotion) => getStatusTag(record),
+            render: (_: any, record: Promotion) => getStatusTag(record),
         },
         {
             title: "Kích hoạt",
             key: "active",
-            render: (_, record: Promotion) => (
+            render: (_: any, record: Promotion) => (
                 <Switch
                     checked={record.is_active}
                     onChange={() =>
-                        handleToggleStatus(
-                            record.id,
-                            record.is_active
-                        )
+                        handleToggleStatus(record.id, record.is_active)
                     }
                 />
             ),
@@ -420,7 +415,7 @@ export default function Bonnus() {
         {
             title: "Thao tác",
             key: "action",
-            render: (_, record: Promotion) => (
+            render: (_: any, record: Promotion) => (
                 <Space>
                     <Button
                         type="primary"
