@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useState } from "react";
 import { Table, Button, Dropdown, Modal } from "antd";
 import type { ColumnsType } from "antd/es/table";
@@ -69,7 +70,8 @@ export default function Tours() {
         if (targetId === null) return;
         setLoading(true);
         try {
-            await API.post(`/tours/${targetId}/toggle`); // gọi softDelete API
+            // Gọi API toggle status cho tour
+            await API.post(`/tours/${targetId}/toggle`);
             notifySuccess("Cập nhật trạng thái thành công");
             fetchTours();
         } catch {
@@ -170,7 +172,7 @@ export default function Tours() {
         width: 100,
         render: (_, record) => {
             const items: MenuProps["items"] = [
-                { key: "view", label: "Xem" },
+                // { key: "view", label: "Xem" },
                 { key: "edit", label: "Sửa" },
             ];
 
