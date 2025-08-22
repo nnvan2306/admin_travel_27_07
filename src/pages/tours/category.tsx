@@ -1,17 +1,17 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useEffect, useState } from "react";
-import { Modal, Form, Input, Upload, Button } from "antd";
-import type { UploadFile } from "antd";
-import { UploadOutlined, PlusOutlined } from "@ant-design/icons";
-import { API } from "@/lib/axios";
-import TableGeneric from "@/components/TableGeneric";
-import type { ColumnsType } from "antd/es/table";
-import type { TableAction } from "@/components/TableGeneric";
-import { useNotifier } from "@/hooks/useNotifier";
-import dayjs from "dayjs";
 import CustomButton from "@/components/CustomButton";
-import { useSelector } from "react-redux";
+import type { TableAction } from "@/components/TableGeneric";
+import TableGeneric from "@/components/TableGeneric";
+import { useNotifier } from "@/hooks/useNotifier";
+import { API } from "@/lib/axios";
 import type { RootState } from "@/store";
+import { PlusOutlined, UploadOutlined } from "@ant-design/icons";
+import type { UploadFile } from "antd";
+import { Button, Form, Input, Modal, Upload } from "antd";
+import type { ColumnsType } from "antd/es/table";
+import dayjs from "dayjs";
+import { useEffect, useState } from "react";
+import { useSelector } from "react-redux";
 
 interface CategoryType {
     id: number;
@@ -231,18 +231,22 @@ export default function DestinationCategory() {
                 label: <span style={{ color: "red" }}>Xóa</span>,
                 danger: true,
                 onClick: async () => {
-                    try {
-                        await API.post(
-                            `/tour-categories/${record.id}/soft-delete`,
-                            {
-                                is_deleted: "inactive",
-                            }
-                        );
-                        notifySuccess("Xóa danh mục (mềm) thành công");
-                        fetchCategories();
-                    } catch {
-                        notifyError("Thao tác thất bại");
-                    }
+                    setSelectedId(record.id);
+                    setActionType("disable");
+                    setShowConfirm(true);
+                    notifySuccess("Xóa danh mục (mềm) thành công");
+                    // try {
+                    //     await API.post(
+                    //         `/tour-categories/${record.id}/soft-delete`,
+                    //         {
+                    //             is_deleted: "inactive",
+                    //         }
+                    //     );
+                    //     notifySuccess("Xóa danh mục (mềm) thành công");
+                    //     fetchCategories();
+                    // } catch {
+                    //     notifyError("Thao tác thất bại");
+                    // }
                 },
             });
         }
