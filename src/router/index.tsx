@@ -11,7 +11,7 @@ import LoginPage from "@/pages/auth/login";
 import Authorization from "@/pages/authorization";
 import Blogs from "@/pages/Blog";
 import BlogNew from "@/pages/Blog/BlogNew";
-import ContactsPage from "@/pages/Contact";
+import ContactsPage from "@/pages/Contact/index";
 import Review from "@/pages/Review";
 import {
     BusRoutesPage,
