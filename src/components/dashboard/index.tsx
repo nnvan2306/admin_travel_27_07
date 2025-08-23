@@ -96,6 +96,7 @@ const items: MenuItem[] = [
         //     { key: "/combos/add", label: "Tạo combo mới" },
         // ],
     },
+   
 
     // {
     //     key: "booking",
@@ -115,6 +116,15 @@ const items: MenuItem[] = [
             { key: "/reviews", label: "Đánh giá tour" },
             // { key: "/feedbacks", label: "Phản hồi người dùng" },
         ],
+    },
+      {
+        key: "/settings",
+        label: "Cài đặt",
+        icon: <VscExtensions />,
+        // children: [
+        //     { key: "/combos", label: "Danh sách combo" },
+        //     { key: "/combos/add", label: "Tạo combo mới" },
+        // ],
     },
 
     // {

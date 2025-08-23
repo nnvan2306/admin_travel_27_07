@@ -19,6 +19,7 @@ import {
     HotelsPage,
     MotorbikesPage,
 } from "@/pages/service";
+import SettingPage from "@/pages/Setting";
 import Bonnus from "@/pages/tours/Bonnus";
 import Booking from "@/pages/tours/Booking";
 import MainLayout from "@layouts/main-layout";
@@ -105,6 +106,7 @@ export default function AppRoutes() {
                 <Route path="motorbikes" element={<MotorbikesPage />} />
                 <Route path="bus-routes" element={<BusRoutesPage />} />
                 <Route path="hotels" element={<HotelsPage />} />
+                <Route path="settings" element={<SettingPage />} />
 
                 {/* Review */}
                 <Route path="reviews" element={<Review />} />
