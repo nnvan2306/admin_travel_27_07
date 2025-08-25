@@ -12,12 +12,14 @@ import {
     Space,
     Spin,
     Upload,
+    Tabs,
 } from "antd";
 import type { RcFile, UploadFile } from "antd/es/upload/interface";
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import ReactMarkdown from "react-markdown";
 import MdEditor from "react-markdown-editor-lite";
+import TourDepartureManager from "@/components/TourDepartureManager";
 
 interface TourCategoryType {
     category_id: number;
@@ -243,12 +245,19 @@ export default function UpdateTour() {
             <div className="mx-auto p-8 bg-white rounded-[8px] shadow-[8px]">
                 <h1 className="text-2xl font-bold mb-6">Chỉnh sửa Tour</h1>
 
-                <Form
-                    form={form}
-                    layout="vertical"
-                    onFinish={onFinish}
-                    initialValues={{ status: "visible" }}
-                >
+                <Tabs
+                    defaultActiveKey="1"
+                    items={[
+                        {
+                            key: '1',
+                            label: 'Thông tin tour',
+                            children: (
+                                <Form
+                                    form={form}
+                                    layout="vertical"
+                                    onFinish={onFinish}
+                                    initialValues={{ status: "visible" }}
+                                >
                     <Form.Item
                         label="Danh mục tour"
                         name="category_id"
@@ -484,7 +493,20 @@ export default function UpdateTour() {
                             </Button>
                         </Space>
                     </Form.Item>
-                </Form>
+                                </Form>
+                            ),
+                        },
+                        {
+                            key: '2',
+                            label: 'Quản lý ngày khởi hành',
+                            children: (
+                                <div>
+                                    <TourDepartureManager tourId={parseInt(id!)} />
+                                </div>
+                            ),
+                        },
+                    ]}
+                />
             </div>
         </>
     );

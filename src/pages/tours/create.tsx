@@ -14,12 +14,15 @@ import {
     Space,
     Spin,
     Upload,
+    Tabs,
 } from "antd";
 import type { RcFile, UploadFile } from "antd/es/upload/interface";
 import { useCallback, useEffect, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import MdEditor from "react-markdown-editor-lite";
 import { useNavigate, useParams } from "react-router-dom";
+import TourDepartureManager from "@/components/TourDepartureManager";
+import TourDepartureCreator from "@/components/TourDepartureCreator";
 
 interface TourCategoryType {
     category_id: number;
@@ -87,6 +90,7 @@ export default function CreateTour() {
     const { contextHolder, notifySuccess, notifyError } = useNotifier();
     const [guides, setGuides] = useState<GuideType[]>([]);
     const [busRoutes, setBusRoutes] = useState<BusRouteType[]>([]);
+    const [newTourId, setNewTourId] = useState<number | null>(null);
 
     // Function để tạo số lượng form dựa trên thời lượng
     const getScheduleCount = (duration: string): number => {
@@ -424,11 +428,25 @@ export default function CreateTour() {
                 headers: { "Content-Type": "multipart/form-data" },
             });
 
-            notifySuccess(res.data.message || "Tạo tour thành công");
-            form.resetFields();
-            setImageFileList([]);
-            setAlbumFileList([]);
-            navigate("/tours");
+            const createdTourId = res.data.tour?.tour_id || res.data.tour_id;
+            if (createdTourId) {
+                setNewTourId(createdTourId);
+                notifySuccess(res.data.message || "Tạo tour thành công! Bây giờ bạn có thể thêm các ngày khởi hành cố định.");
+                
+                // Chuyển sang tab quản lý departure
+                setTimeout(() => {
+                    const tabs = document.querySelectorAll('.ant-tabs-tab');
+                    if (tabs[1]) {
+                        (tabs[1] as HTMLElement).click();
+                    }
+                }, 1000);
+            } else {
+                notifySuccess(res.data.message || "Tạo tour thành công");
+                form.resetFields();
+                setImageFileList([]);
+                setAlbumFileList([]);
+                navigate("/tours");
+            }
         } catch (error: any) {
             notifyError(error?.response?.data?.message || "Tạo tour thất bại");
         } finally {
@@ -575,458 +593,481 @@ export default function CreateTour() {
                     {id ? "Cập nhật Tour" : "Tạo Tour Mới"}
                 </h1>
 
-                <Form
-                    form={form}
-                    layout="vertical"
-                    onFinish={onFinish}
-                    initialValues={{ status: "visible" }}
-                >
-                    <Form.Item
-                        label="Danh mục tour"
-                        name="category_id"
-                        rules={[
-                            {
-                                required: true,
-                                message: "Vui lòng chọn danh mục tour",
-                            },
-                        ]}
-                    >
-                        <Select
-                            placeholder="Chọn danh mục"
-                            loading={categories.length === 0}
-                        >
-                            {categories.map((cat) => (
-                                <Select.Option
-                                    key={cat.category_id}
-                                    value={cat.category_id}
+                <Tabs
+                    defaultActiveKey="1"
+                    items={[
+                        {
+                            key: '1',
+                            label: 'Thông tin tour',
+                            children: (
+                                <Form
+                                    form={form}
+                                    layout="vertical"
+                                    onFinish={onFinish}
+                                    initialValues={{ status: "visible" }}
                                 >
-                                    {cat.category_name}
-                                </Select.Option>
-                            ))}
-                        </Select>
-                    </Form.Item>
-
-                    <Form.Item
-                        label="Tên tour"
-                        name="tour_name"
-                        rules={[
-                            {
-                                required: true,
-                                message: "Vui lòng nhập tên tour",
-                            },
-                            {
-                                max: 255,
-                                message:
-                                    "Tên tour không được vượt quá 255 ký tự",
-                            },
-                        ]}
-                    >
-                        <Input placeholder="Nhập tên tour" />
-                    </Form.Item>
-
-                    <Form.Item label="Mô tả" name="description">
-                        {/* <TextArea rows={3} placeholder="Mô tả tour" /> */}
-                        {dataLoaded && (
-                            <MdEditor
-                                key={`description-${id || "new"}-${dataLoaded}`}
-                                style={{ height: "300px" }}
-                                value={form.getFieldValue("description") || ""}
-                                renderHTML={(text) => (
-                                    <ReactMarkdown>{text}</ReactMarkdown>
-                                )}
-                                onChange={({ text }) =>
-                                    form.setFieldsValue({ description: text })
-                                }
-                            />
-                        )}
-                    </Form.Item>
-
-                    <Form.Item label="Hành trình" name="itinerary">
-                        {dataLoaded && (
-                            <MdEditor
-                                key={`itinerary-${id || "new"}-${dataLoaded}`}
-                                style={{ height: "300px" }}
-                                value={form.getFieldValue("itinerary") || ""}
-                                renderHTML={(text) => (
-                                    <ReactMarkdown>{text}</ReactMarkdown>
-                                )}
-                                onChange={({ text }) =>
-                                    form.setFieldsValue({ itinerary: text })
-                                }
-                            />
-                        )}
-                    </Form.Item>
-
-                    <Form.Item
-                        label="Giá gốc"
-                        name="price"
-                        rules={[
-                            {
-                                required: true,
-                                message: "Vui lòng nhập giá gốc",
-                            },
-                            {
-                                type: "number",
-                                min: 0,
-                                message: "Giá phải lớn hơn hoặc bằng 0",
-                            },
-                        ]}
-                    >
-                        <InputNumber
-                            type="number"
-                            min={0}
-                            placeholder="Nhập giá gốc"
-                            style={{ width: "100%" }}
-                        />
-                    </Form.Item>
-
-                    <Form.Item
-                        label="Giá giảm"
-                        name="discount_price"
-                        rules={[
-                            {
-                                type: "number",
-                                min: 0,
-                                message: "Giá giảm phải lớn hơn hoặc bằng 0",
-                            },
-                        ]}
-                    >
-                        <InputNumber
-                            type="number"
-                            min={0}
-                            placeholder="Nhập giá giảm (nếu có)"
-                            style={{ width: "100%" }}
-                        />
-                    </Form.Item>
-
-                    <Form.Item
-                        label="Số người tối thiểu"
-                        name="min_people"
-                        rules={[
-                            {
-                                required: true,
-                                message: "Vui lòng nhập số người tối thiểu",
-                            },
-                            {
-                                type: "number",
-                                min: 1,
-                                max: 50,
-                                message: "Số người tối thiểu từ 1 đến 50",
-                            },
-                        ]}
-                    >
-                        <InputNumber
-                            type="number"
-                            min={1}
-                            max={50}
-                            placeholder="Nhập số người tối thiểu"
-                            style={{ width: "100%" }}
-                        />
-                    </Form.Item>
-
-                    <Form.Item
-                        name="duration"
-                        label="Thời lượng tour"
-                        rules={[
-                            {
-                                required: true,
-                                message: "Vui lòng chọn thời lượng tour!",
-                            },
-                        ]}
-                    >
-                        <Select
-                            placeholder="Chọn thời lượng"
-                            onChange={handleDurationChange}
-                        >
-                            <Select.Option value="1 ngày">1 ngày</Select.Option>
-                            <Select.Option value="2 ngày 1 đêm">
-                                2 ngày
-                            </Select.Option>
-                            <Select.Option value="3 ngày 2 đêm">
-                                3 ngày
-                            </Select.Option>
-                            <Select.Option value="4 ngày 3 đêm">
-                                4 ngày
-                            </Select.Option>
-                            <Select.Option value="5 ngày 4 đêm">
-                                5 ngày
-                            </Select.Option>
-                        </Select>
-                    </Form.Item>
-
-                    <Form.Item
-                        label="Điểm đến (có thể chọn nhiều)"
-                        name="destination_ids"
-                        rules={[
-                            {
-                                type: "array",
-                                message: "Vui lòng chọn ít nhất một điểm đến",
-                            },
-                        ]}
-                    >
-                        <Select
-                            mode="multiple"
-                            placeholder="Chọn điểm đến"
-                            optionFilterProp="children"
-                            showSearch
-                        >
-                            {destinations.map((d) => (
-                                <Select.Option
-                                    key={d.destination_id}
-                                    value={d.destination_id}
-                                >
-                                    {d.name}
-                                </Select.Option>
-                            ))}
-                        </Select>
-                    </Form.Item>
-
-                    {/* <Form.Item label="Hướng dẫn viên" name="guide_id">
-                        <Select allowClear placeholder="Chọn hướng dẫn viên">
-                            {guides.map((g) => (
-                                <Select.Option
-                                    key={g.guide_id}
-                                    value={g.guide_id}
-                                >
-                                    {g.name}
-                                </Select.Option>
-                            ))}
-                        </Select>
-                    </Form.Item>
-
-                    <Form.Item label="Tuyến xe buýt" name="bus_route_id">
-                        <Select allowClear placeholder="Chọn tuyến xe buýt">
-                            {busRoutes.map((route) => (
-                                <Select.Option
-                                    key={route.bus_route_id}
-                                    value={route.bus_route_id}
-                                >
-                                    {route.name}
-                                </Select.Option>
-                            ))}
-                        </Select>
-                    </Form.Item> */}
-
-                    <div>
-                        <h3 className="text-lg font-semibold mb-4">
-                            Lịch trình tour
-                        </h3>
-                        {selectedDuration && (
-                            <div>
-                                {Array.from(
-                                    {
-                                        length: getScheduleCount(
-                                            selectedDuration
-                                        ),
-                                    },
-                                    (_, index) => (
-                                        <Card
-                                            key={index}
-                                            type="inner"
-                                            title={`Ngày ${index + 1}`}
-                                            style={{ marginBottom: 16 }}
+                                    <Form.Item
+                                        label="Danh mục tour"
+                                        name="category_id"
+                                        rules={[
+                                            {
+                                                required: true,
+                                                message: "Vui lòng chọn danh mục tour",
+                                            },
+                                        ]}
+                                    >
+                                        <Select
+                                            placeholder="Chọn danh mục"
+                                            loading={categories.length === 0}
                                         >
-                                            <Form.Item
-                                                name={[
-                                                    "schedules",
-                                                    index,
-                                                    "title",
-                                                ]}
-                                                label="Tiêu đề"
-                                                rules={[
-                                                    {
-                                                        required: true,
-                                                        message:
-                                                            "Vui lòng nhập tiêu đề!",
-                                                    },
-                                                    {
-                                                        max: 255,
-                                                        message:
-                                                            "Tiêu đề không được vượt quá 255 ký tự",
-                                                    },
-                                                ]}
-                                            >
-                                                <Input placeholder="Nhập tiêu đề cho ngày này" />
-                                            </Form.Item>
+                                            {categories.map((cat) => (
+                                                <Select.Option
+                                                    key={cat.category_id}
+                                                    value={cat.category_id}
+                                                >
+                                                    {cat.category_name}
+                                                </Select.Option>
+                                            ))}
+                                        </Select>
+                                    </Form.Item>
 
-                                            <Form.Item
-                                                name={[
-                                                    "schedules",
-                                                    index,
-                                                    "activity_description",
-                                                ]}
-                                                label="Mô tả"
-                                                rules={[
-                                                    {
-                                                        required: true,
-                                                        message:
-                                                            "Vui lòng nhập mô tả!",
-                                                    },
-                                                ]}
-                                            >
-                                                {dataLoaded && (
-                                                    <MdEditor
-                                                        key={`schedule-${index}-${
-                                                            id || "new"
-                                                        }-${selectedDuration}-${dataLoaded}`}
-                                                        style={{
-                                                            height: "300px",
-                                                        }}
-                                                        renderHTML={(text) => (
-                                                            <ReactMarkdown>
-                                                                {text}
-                                                            </ReactMarkdown>
-                                                        )}
-                                                        value={
-                                                            form.getFieldValue([
-                                                                "schedules",
-                                                                index,
-                                                                "activity_description",
-                                                            ]) || ""
-                                                        }
-                                                        onChange={({
-                                                            text,
-                                                        }) => {
-                                                            const currentSchedules =
-                                                                form.getFieldValue(
-                                                                    "schedules"
-                                                                ) || [];
-                                                            const newSchedules =
-                                                                [
-                                                                    ...currentSchedules,
-                                                                ];
+                                    <Form.Item
+                                        label="Tên tour"
+                                        name="tour_name"
+                                        rules={[
+                                            {
+                                                required: true,
+                                                message: "Vui lòng nhập tên tour",
+                                            },
+                                            {
+                                                max: 255,
+                                                message:
+                                                    "Tên tour không được vượt quá 255 ký tự",
+                                            },
+                                        ]}
+                                    >
+                                        <Input placeholder="Nhập tên tour" />
+                                    </Form.Item>
 
-                                                            // Ensure the schedule object exists
-                                                            if (
-                                                                !newSchedules[
-                                                                    index
-                                                                ]
-                                                            ) {
-                                                                newSchedules[
-                                                                    index
-                                                                ] = {
-                                                                    day:
-                                                                        index +
-                                                                        1,
-                                                                    title: "",
-                                                                    activity_description:
-                                                                        "",
-                                                                };
-                                                            }
-
-                                                            newSchedules[
-                                                                index
-                                                            ] = {
-                                                                ...newSchedules[
-                                                                    index
-                                                                ],
-                                                                activity_description:
-                                                                    text,
-                                                            };
-
-                                                            form.setFieldsValue(
-                                                                {
-                                                                    schedules:
-                                                                        newSchedules,
-                                                                }
-                                                            );
-                                                        }}
-                                                    />
+                                    <Form.Item label="Mô tả" name="description">
+                                        {dataLoaded && (
+                                            <MdEditor
+                                                key={`description-${id || "new"}-${dataLoaded}`}
+                                                style={{ height: "300px" }}
+                                                value={form.getFieldValue("description") || ""}
+                                                renderHTML={(text) => (
+                                                    <ReactMarkdown>{text}</ReactMarkdown>
                                                 )}
-                                            </Form.Item>
-                                        </Card>
-                                    )
-                                )}
-                            </div>
-                        )}
-                        {!selectedDuration && (
-                            <div className="text-gray-500 text-center py-8 border-2 border-dashed border-gray-300 rounded-lg">
-                                Vui lòng chọn thời lượng tour để hiển thị form
-                                lịch trình
-                            </div>
-                        )}
-                    </div>
+                                                onChange={({ text }) =>
+                                                    form.setFieldsValue({ description: text })
+                                                }
+                                            />
+                                        )}
+                                    </Form.Item>
 
-                    <Form.Item
-                        label="Trạng thái"
-                        name="status"
-                        rules={[
-                            {
-                                required: true,
-                                message: "Vui lòng chọn trạng thái",
-                            },
-                        ]}
-                    >
-                        <Select placeholder="Chọn trạng thái">
-                            <Select.Option value="visible">
-                                Hiển thị
-                            </Select.Option>
-                            <Select.Option value="hidden">Ẩn</Select.Option>
-                        </Select>
-                    </Form.Item>
+                                    <Form.Item label="Hành trình" name="itinerary">
+                                        {dataLoaded && (
+                                            <MdEditor
+                                                key={`itinerary-${id || "new"}-${dataLoaded}`}
+                                                style={{ height: "300px" }}
+                                                value={form.getFieldValue("itinerary") || ""}
+                                                renderHTML={(text) => (
+                                                    <ReactMarkdown>{text}</ReactMarkdown>
+                                                )}
+                                                onChange={({ text }) =>
+                                                    form.setFieldsValue({ itinerary: text })
+                                                }
+                                            />
+                                        )}
+                                    </Form.Item>
 
-                    <Form.Item
-                        label="Ảnh đại diện"
-                        required
-                        rules={[
-                            {
-                                required: true,
-                                message: "Vui lòng chọn ảnh đại diện",
-                            },
-                        ]}
-                    >
-                        <Upload
-                            listType="picture-card"
-                            maxCount={1}
-                            fileList={imageFileList}
-                            beforeUpload={beforeUploadImage}
-                            onChange={({ fileList }) =>
-                                setImageFileList(fileList)
-                            }
-                        >
-                            {imageFileList.length >= 1 ? null : (
+                                    <Form.Item
+                                        label="Giá gốc"
+                                        name="price"
+                                        rules={[
+                                            {
+                                                required: true,
+                                                message: "Vui lòng nhập giá gốc",
+                                            },
+                                            {
+                                                type: "number",
+                                                min: 0,
+                                                message: "Giá phải lớn hơn hoặc bằng 0",
+                                            },
+                                        ]}
+                                    >
+                                        <InputNumber
+                                            type="number"
+                                            min={0}
+                                            placeholder="Nhập giá gốc"
+                                            style={{ width: "100%" }}
+                                        />
+                                    </Form.Item>
+
+                                    <Form.Item
+                                        label="Giá giảm"
+                                        name="discount_price"
+                                        rules={[
+                                            {
+                                                type: "number",
+                                                min: 0,
+                                                message: "Giá giảm phải lớn hơn hoặc bằng 0",
+                                            },
+                                        ]}
+                                    >
+                                        <InputNumber
+                                            type="number"
+                                            min={0}
+                                            placeholder="Nhập giá giảm (nếu có)"
+                                            style={{ width: "100%" }}
+                                        />
+                                    </Form.Item>
+
+                                    <Form.Item
+                                        label="Số người tối thiểu"
+                                        name="min_people"
+                                        rules={[
+                                            {
+                                                required: true,
+                                                message: "Vui lòng nhập số người tối thiểu",
+                                            },
+                                            {
+                                                type: "number",
+                                                min: 1,
+                                                max: 50,
+                                                message: "Số người tối thiểu từ 1 đến 50",
+                                            },
+                                        ]}
+                                    >
+                                        <InputNumber
+                                            type="number"
+                                            min={1}
+                                            max={50}
+                                            placeholder="Nhập số người tối thiểu"
+                                            style={{ width: "100%" }}
+                                        />
+                                    </Form.Item>
+
+                                    <Form.Item
+                                        name="duration"
+                                        label="Thời lượng tour"
+                                        rules={[
+                                            {
+                                                required: true,
+                                                message: "Vui lòng chọn thời lượng tour!",
+                                            },
+                                        ]}
+                                    >
+                                        <Select
+                                            placeholder="Chọn thời lượng"
+                                            onChange={handleDurationChange}
+                                        >
+                                            <Select.Option value="1 ngày">1 ngày</Select.Option>
+                                            <Select.Option value="2 ngày 1 đêm">
+                                                2 ngày
+                                            </Select.Option>
+                                            <Select.Option value="3 ngày 2 đêm">
+                                                3 ngày
+                                            </Select.Option>
+                                            <Select.Option value="4 ngày 3 đêm">
+                                                4 ngày
+                                            </Select.Option>
+                                            <Select.Option value="5 ngày 4 đêm">
+                                                5 ngày
+                                            </Select.Option>
+                                        </Select>
+                                    </Form.Item>
+
+                                    <Form.Item
+                                        label="Điểm đến (có thể chọn nhiều)"
+                                        name="destination_ids"
+                                        rules={[
+                                            {
+                                                type: "array",
+                                                message: "Vui lòng chọn ít nhất một điểm đến",
+                                            },
+                                        ]}
+                                    >
+                                        <Select
+                                            mode="multiple"
+                                            placeholder="Chọn điểm đến"
+                                            optionFilterProp="children"
+                                            showSearch
+                                        >
+                                            {destinations.map((d) => (
+                                                <Select.Option
+                                                    key={d.destination_id}
+                                                    value={d.destination_id}
+                                                >
+                                                    {d.name}
+                                                </Select.Option>
+                                            ))}
+                                        </Select>
+                                    </Form.Item>
+
+                                    <div>
+                                        <h3 className="text-lg font-semibold mb-4">
+                                            Lịch trình tour
+                                        </h3>
+                                        {selectedDuration && (
+                                            <div>
+                                                {Array.from(
+                                                    {
+                                                        length: getScheduleCount(
+                                                            selectedDuration
+                                                        ),
+                                                    },
+                                                    (_, index) => (
+                                                        <Card
+                                                            key={index}
+                                                            type="inner"
+                                                            title={`Ngày ${index + 1}`}
+                                                            style={{ marginBottom: 16 }}
+                                                        >
+                                                            <Form.Item
+                                                                name={[
+                                                                    "schedules",
+                                                                    index,
+                                                                    "title",
+                                                                ]}
+                                                                label="Tiêu đề"
+                                                                rules={[
+                                                                    {
+                                                                        required: true,
+                                                                        message:
+                                                                            "Vui lòng nhập tiêu đề!",
+                                                                    },
+                                                                    {
+                                                                        max: 255,
+                                                                        message:
+                                                                            "Tiêu đề không được vượt quá 255 ký tự",
+                                                                    },
+                                                                ]}
+                                                            >
+                                                                <Input placeholder="Nhập tiêu đề cho ngày này" />
+                                                            </Form.Item>
+
+                                                            <Form.Item
+                                                                name={[
+                                                                    "schedules",
+                                                                    index,
+                                                                    "activity_description",
+                                                                ]}
+                                                                label="Mô tả"
+                                                                rules={[
+                                                                    {
+                                                                        required: true,
+                                                                        message:
+                                                                            "Vui lòng nhập mô tả!",
+                                                                    },
+                                                                ]}
+                                                            >
+                                                                {dataLoaded && (
+                                                                    <MdEditor
+                                                                        key={`schedule-${index}-${
+                                                                            id || "new"
+                                                                        }-${selectedDuration}-${dataLoaded}`}
+                                                                        style={{
+                                                                            height: "300px",
+                                                                        }}
+                                                                        renderHTML={(text) => (
+                                                                            <ReactMarkdown>
+                                                                                {text}
+                                                                            </ReactMarkdown>
+                                                                        )}
+                                                                        value={
+                                                                            form.getFieldValue([
+                                                                                "schedules",
+                                                                                index,
+                                                                                "activity_description",
+                                                                            ]) || ""
+                                                                        }
+                                                                        onChange={({
+                                                                            text,
+                                                                        }) => {
+                                                                            const currentSchedules =
+                                                                                form.getFieldValue(
+                                                                                    "schedules"
+                                                                                ) || [];
+                                                                            const newSchedules =
+                                                                                [
+                                                                                    ...currentSchedules,
+                                                                                ];
+
+                                                                            // Ensure the schedule object exists
+                                                                            if (
+                                                                                !newSchedules[
+                                                                                    index
+                                                                                ]
+                                                                            ) {
+                                                                                newSchedules[
+                                                                                    index
+                                                                                ] = {
+                                                                                    day:
+                                                                                        index +
+                                                                                        1,
+                                                                                    title: "",
+                                                                                    activity_description:
+                                                                                        "",
+                                                                                };
+                                                                            }
+
+                                                                            newSchedules[
+                                                                                index
+                                                                            ] = {
+                                                                                ...newSchedules[
+                                                                                    index
+                                                                                ],
+                                                                                activity_description:
+                                                                                    text,
+                                                                            };
+
+                                                                            form.setFieldsValue(
+                                                                                {
+                                                                                    schedules:
+                                                                                        newSchedules,
+                                                                                }
+                                                                            );
+                                                                        }}
+                                                                    />
+                                                                )}
+                                                            </Form.Item>
+                                                        </Card>
+                                                    )
+                                                )}
+                                            </div>
+                                        )}
+                                        {!selectedDuration && (
+                                            <div className="text-gray-500 text-center py-8 border-2 border-dashed border-gray-300 rounded-lg">
+                                                Vui lòng chọn thời lượng tour để hiển thị form
+                                                lịch trình
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    <Form.Item
+                                        label="Trạng thái"
+                                        name="status"
+                                        rules={[
+                                            {
+                                                required: true,
+                                                message: "Vui lòng chọn trạng thái",
+                                            },
+                                        ]}
+                                    >
+                                        <Select placeholder="Chọn trạng thái">
+                                            <Select.Option value="visible">
+                                                Hiển thị
+                                            </Select.Option>
+                                            <Select.Option value="hidden">Ẩn</Select.Option>
+                                        </Select>
+                                    </Form.Item>
+
+                                    <Form.Item
+                                        label="Ảnh đại diện"
+                                        required
+                                        rules={[
+                                            {
+                                                required: true,
+                                                message: "Vui lòng chọn ảnh đại diện",
+                                            },
+                                        ]}
+                                    >
+                                        <Upload
+                                            listType="picture-card"
+                                            maxCount={1}
+                                            fileList={imageFileList}
+                                            beforeUpload={beforeUploadImage}
+                                            onChange={({ fileList }) =>
+                                                setImageFileList(fileList)
+                                            }
+                                        >
+                                            {imageFileList.length >= 1 ? null : (
+                                                <div>
+                                                    <PlusOutlined />
+                                                    <div style={{ marginTop: 8 }}>Tải ảnh</div>
+                                                </div>
+                                            )}
+                                        </Upload>
+                                    </Form.Item>
+
+                                    <Form.Item label="Ảnh album (nhiều ảnh)">
+                                        <Upload
+                                            listType="picture-card"
+                                            multiple
+                                            fileList={albumFileList}
+                                            beforeUpload={beforeUploadImage}
+                                            onChange={({ fileList }) =>
+                                                setAlbumFileList(fileList)
+                                            }
+                                        >
+                                            <div>
+                                                <PlusOutlined />
+                                                <div style={{ marginTop: 8 }}>Tải ảnh</div>
+                                            </div>
+                                        </Upload>
+                                    </Form.Item>
+
+                                    <Form.Item>
+                                        <Space>
+                                            <Button
+                                                type="primary"
+                                                htmlType="submit"
+                                                loading={loading}
+                                                disabled={
+                                                    categories.length === 0 ||
+                                                    destinations.length === 0
+                                                }
+                                            >
+                                                {id ? "Cập nhật tour" : "Tạo tour"}
+                                            </Button>
+                                            <Button onClick={onCancel}>Hủy</Button>
+                                        </Space>
+                                    </Form.Item>
+                                </Form>
+                            ),
+                        },
+                        {
+                            key: '2',
+                            label: 'Quản lý ngày khởi hành',
+                            children: (
                                 <div>
-                                    <PlusOutlined />
-                                    <div style={{ marginTop: 8 }}>Tải ảnh</div>
+                                    {id ? (
+                                        // Khi edit tour: hiển thị TourDepartureManager với tourId
+                                        <TourDepartureManager tourId={parseInt(id)} />
+                                    ) : (
+                                        // Khi tạo tour mới: hiển thị TourDepartureCreator
+                                        <div>
+                                            <TourDepartureCreator 
+                                                tourId={newTourId || undefined}
+                                                onDeparturesCreated={() => {
+                                                    // Sau khi tạo departure thành công, có thể navigate về trang tours
+                                                    if (newTourId) {
+                                                        setTimeout(() => {
+                                                            navigate("/tours");
+                                                        }, 2000);
+                                                    }
+                                                }}
+                                            />
+                                            
+                                            {newTourId && (
+                                                <div className="mt-6 text-center">
+                                                    <Button 
+                                                        type="default" 
+                                                        size="large"
+                                                        onClick={() => navigate("/tours")}
+                                                    >
+                                                        Hoàn thành - Quay về danh sách tours
+                                                    </Button>
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
                                 </div>
-                            )}
-                        </Upload>
-                    </Form.Item>
-
-                    <Form.Item label="Ảnh album (nhiều ảnh)">
-                        <Upload
-                            listType="picture-card"
-                            multiple
-                            fileList={albumFileList}
-                            beforeUpload={beforeUploadImage}
-                            onChange={({ fileList }) =>
-                                setAlbumFileList(fileList)
-                            }
-                        >
-                            <div>
-                                <PlusOutlined />
-                                <div style={{ marginTop: 8 }}>Tải ảnh</div>
-                            </div>
-                        </Upload>
-                    </Form.Item>
-
-                    <Form.Item>
-                        <Space>
-                            <Button
-                                type="primary"
-                                htmlType="submit"
-                                loading={loading}
-                                disabled={
-                                    categories.length === 0 ||
-                                    destinations.length === 0
-                                }
-                            >
-                                {id ? "Cập nhật tour" : "Tạo tour"}
-                            </Button>
-                            <Button onClick={onCancel}>Hủy</Button>
-                        </Space>
-                    </Form.Item>
-                </Form>
+                            ),
+                        },
+                    ]}
+                />
             </div>
         </>
     );
